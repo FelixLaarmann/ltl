@@ -1,0 +1,247 @@
+DIGEST 2dd9cec4202a0976517664ae2d60ad4e
+FLTL.liveness
+R1516:1518 LTL.ltl <> <> lib
+sec 1530:1537 <> liveness
+var 1552:1556 liveness state
+var 1558:1562 liveness label
+var 1572:1581 liveness transition
+var 1613:1622 liveness init_state
+var 1642:1645 liveness fair
+R1590:1593 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1585:1589 LTL.liveness <> label:1 var
+R1594:1601 Coq.Relations.Relation_Definitions <> relation def
+R1603:1607 LTL.liveness <> state:2 var
+R1631:1634 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1626:1630 LTL.liveness <> state:2 var
+R1654:1657 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1649:1653 LTL.liveness <> label:1 var
+syndef 1676:1681 <> Stream
+R1687:1692 LTL.ltl <> stream coind
+R1694:1698 LTL.liveness <> liveness.state var
+syndef 1726:1738 <> State_formula
+R1744:1756 LTL.ltl <> state_formula def
+R1758:1762 LTL.liveness <> liveness.state var
+syndef 1790:1803 <> Stream_formula
+R1809:1822 LTL.ltl <> stream_formula def
+R1824:1828 LTL.liveness <> liveness.state var
+syndef 1856:1860 <> Trace
+R1866:1870 LTL.ltl <> trace def
+R1872:1881 LTL.liveness <> liveness.transition var
+syndef 1909:1917 <> Fair_step
+R1923:1931 LTL.ltl <> fair_step ind
+R1944:1947 LTL.liveness <> liveness.fair var
+R1933:1942 LTL.liveness <> liveness.transition var
+syndef 1975:1982 <> Leads_to
+R1988:1995 LTL.ltl <> leads_to def
+R1997:2006 LTL.liveness <> liveness.transition var
+syndef 2034:2040 <> Fairstr
+R2046:2052 LTL.ltl <> fairstr def
+R2065:2068 LTL.liveness <> liveness.fair var
+R2054:2063 LTL.liveness <> liveness.transition var
+prf 2174:2189 <> until_eventually
+R2208:2221 LTL.ltl <> stream_formula def
+R2223:2227 LTL.liveness <> liveness.state var
+binder 2202:2202 <> P:6
+binder 2204:2204 <> Q:7
+R2237:2242 LTL.ltl <> stream coind
+R2244:2248 LTL.liveness <> liveness.state var
+binder 2231:2233 <> str:8
+R2266:2269 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2253:2257 LTL.ltl <> until ind
+R2263:2265 LTL.liveness <> str:8 var
+R2261:2261 LTL.liveness <> Q:7 var
+R2259:2259 LTL.liveness <> P:6 var
+R2270:2279 LTL.ltl <> eventually ind
+R2283:2285 LTL.liveness <> str:8 var
+R2281:2281 LTL.liveness <> Q:7 var
+prf 2466:2480 <> once_eventually
+R2499:2512 LTL.ltl <> stream_formula def
+R2514:2518 LTL.liveness <> liveness.state var
+binder 2493:2493 <> P:9
+binder 2495:2495 <> Q:10
+R2528:2533 LTL.ltl <> stream coind
+R2535:2539 LTL.liveness <> liveness.state var
+binder 2522:2524 <> str:11
+R2562:2565 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2544:2553 LTL.ltl <> once_until def
+R2559:2561 LTL.liveness <> str:11 var
+R2557:2557 LTL.liveness <> Q:10 var
+R2555:2555 LTL.liveness <> P:9 var
+R2566:2576 LTL.ltl <> is_followed def
+R2582:2584 LTL.liveness <> str:11 var
+R2580:2580 LTL.liveness <> Q:10 var
+R2578:2578 LTL.liveness <> P:9 var
+R2595:2604 LTL.ltl <> once_until def
+R2622:2632 LTL.ltl <> is_followed def
+R2651:2662 LTL.ltl <> leads_to_via def
+R2680:2686 LTL.ltl <> implies def
+R2752:2767 LTL.liveness <> until_eventually thm
+R2752:2767 LTL.liveness <> until_eventually thm
+prf 2829:2842 <> followed_until
+R2858:2871 LTL.ltl <> stream_formula def
+R2873:2877 LTL.liveness <> liveness.state var
+binder 2854:2854 <> P:12
+R2881:2881 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2925:2930 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2895:2900 LTL.ltl <> stream coind
+R2902:2906 LTL.liveness <> liveness.state var
+binder 2889:2891 <> str:13
+R2914:2917 Coq.Init.Logic <> ::type_scope:x_'\/'_x not
+R2909:2909 LTL.liveness <> P:12 var
+R2911:2913 LTL.liveness <> str:13 var
+R2918:2919 Coq.Init.Logic <> ::type_scope:'~'_x not
+R2920:2920 LTL.liveness <> P:12 var
+R2922:2924 LTL.liveness <> str:13 var
+R2944:2949 LTL.ltl <> stream coind
+R2951:2955 LTL.liveness <> liveness.state var
+binder 2938:2940 <> str:14
+R3012:3016 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2959:2969 LTL.ltl <> is_followed def
+R3009:3011 LTL.liveness <> str:14 var
+R2984:2989 LTL.ltl <> stream coind
+R2991:2995 LTL.liveness <> liveness.state var
+binder 2978:2980 <> str:15
+R3000:3001 Coq.Init.Logic <> ::type_scope:'~'_x not
+R3002:3002 LTL.liveness <> P:12 var
+R3004:3006 LTL.liveness <> str:15 var
+R2971:2971 LTL.liveness <> P:12 var
+R3017:3021 LTL.ltl <> until ind
+R3061:3063 LTL.liveness <> str:14 var
+R3036:3041 LTL.ltl <> stream coind
+R3043:3047 LTL.liveness <> liveness.state var
+binder 3030:3032 <> str:16
+R3052:3053 Coq.Init.Logic <> ::type_scope:'~'_x not
+R3054:3054 LTL.liveness <> P:12 var
+R3056:3058 LTL.liveness <> str:16 var
+R3023:3023 LTL.liveness <> P:12 var
+R3132:3142 LTL.ltl <> is_followed def
+prf 3495:3510 <> eventually_until
+R3527:3540 LTL.ltl <> stream_formula def
+R3542:3546 LTL.liveness <> liveness.state var
+binder 3523:3523 <> P:17
+R3556:3561 LTL.ltl <> stream coind
+R3563:3567 LTL.liveness <> liveness.state var
+binder 3550:3552 <> str:18
+R3572:3572 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3616:3621 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3586:3591 LTL.ltl <> stream coind
+R3593:3597 LTL.liveness <> liveness.state var
+binder 3580:3582 <> str:19
+R3605:3608 Coq.Init.Logic <> ::type_scope:x_'\/'_x not
+R3600:3600 LTL.liveness <> P:17 var
+R3602:3604 LTL.liveness <> str:19 var
+R3609:3610 Coq.Init.Logic <> ::type_scope:'~'_x not
+R3611:3611 LTL.liveness <> P:17 var
+R3613:3615 LTL.liveness <> str:19 var
+R3638:3641 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3622:3631 LTL.ltl <> eventually ind
+R3635:3637 LTL.liveness <> str:18 var
+R3633:3633 LTL.liveness <> P:17 var
+R3642:3646 LTL.ltl <> until ind
+R3686:3688 LTL.liveness <> str:18 var
+R3684:3684 LTL.liveness <> P:17 var
+R3659:3664 LTL.ltl <> stream coind
+R3666:3670 LTL.liveness <> liveness.state var
+binder 3653:3655 <> str:20
+R3675:3676 Coq.Init.Logic <> ::type_scope:'~'_x not
+R3677:3677 LTL.liveness <> P:17 var
+R3679:3681 LTL.liveness <> str:20 var
+R3824:3831 LTL.ltl <> cons_str constr
+R3824:3831 LTL.ltl <> cons_str constr
+prf 3921:3937 <> one_step_leads_to
+R3955:3967 LTL.ltl <> state_formula def
+R3969:3973 LTL.liveness <> liveness.state var
+binder 3949:3949 <> P:21
+binder 3951:3951 <> Q:22
+R3977:3977 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4040:4045 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3989:3993 LTL.liveness <> liveness.state var
+binder 3985:3985 <> s:23
+R3999:4002 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3996:3996 LTL.liveness <> P:21 var
+R3998:3998 LTL.liveness <> s:23 var
+R4003:4009 LTL.ltl <> enabled ind
+R4039:4039 LTL.liveness <> s:23 var
+R4012:4020 LTL.ltl <> fair_step ind
+R4033:4036 LTL.liveness <> liveness.fair var
+R4022:4031 LTL.liveness <> liveness.transition var
+R4069:4073 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4046:4053 LTL.ltl <> leads_to def
+R4068:4068 LTL.liveness <> Q:22 var
+R4066:4066 LTL.liveness <> P:21 var
+R4055:4064 LTL.liveness <> liveness.transition var
+R4087:4092 LTL.ltl <> stream coind
+R4094:4098 LTL.liveness <> liveness.state var
+binder 4081:4083 <> str:24
+R4122:4126 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4102:4106 LTL.ltl <> trace def
+R4119:4121 LTL.liveness <> str:24 var
+R4108:4117 LTL.liveness <> liveness.transition var
+R4154:4158 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4127:4133 LTL.ltl <> fairstr def
+R4151:4153 LTL.liveness <> str:24 var
+R4146:4149 LTL.liveness <> liveness.fair var
+R4135:4144 LTL.liveness <> liveness.transition var
+R4185:4189 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4159:4178 LTL.ltl <> state2stream_formula def
+R4182:4184 LTL.liveness <> str:24 var
+R4180:4180 LTL.liveness <> P:21 var
+R4190:4194 LTL.ltl <> until ind
+R4246:4248 LTL.liveness <> str:24 var
+R4222:4241 LTL.ltl <> state2stream_formula def
+R4243:4243 LTL.liveness <> Q:22 var
+R4197:4216 LTL.ltl <> state2stream_formula def
+R4218:4218 LTL.liveness <> P:21 var
+R4260:4266 LTL.ltl <> fairstr def
+R4284:4299 LTL.ltl <> infinitely_often def
+R4318:4325 LTL.ltl <> leads_to def
+R4607:4626 LTL.ltl <> state2stream_formula def
+R4733:4739 LTL.ltl <> C_trans constr
+R4733:4739 LTL.ltl <> C_trans constr
+R4792:4811 LTL.ltl <> state2stream_formula def
+prf 5126:5149 <> always_one_step_leads_to
+R5167:5179 LTL.ltl <> state_formula def
+R5181:5185 LTL.liveness <> liveness.state var
+binder 5161:5161 <> P:25
+binder 5163:5163 <> Q:26
+R5189:5189 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5252:5257 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5201:5205 LTL.liveness <> liveness.state var
+binder 5197:5197 <> s:27
+R5211:5214 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5208:5208 LTL.liveness <> P:25 var
+R5210:5210 LTL.liveness <> s:27 var
+R5215:5221 LTL.ltl <> enabled ind
+R5251:5251 LTL.liveness <> s:27 var
+R5224:5232 LTL.ltl <> fair_step ind
+R5245:5248 LTL.liveness <> liveness.fair var
+R5234:5243 LTL.liveness <> liveness.transition var
+R5281:5285 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5258:5265 LTL.ltl <> leads_to def
+R5280:5280 LTL.liveness <> Q:26 var
+R5278:5278 LTL.liveness <> P:25 var
+R5267:5276 LTL.liveness <> liveness.transition var
+R5299:5304 LTL.ltl <> stream coind
+R5306:5310 LTL.liveness <> liveness.state var
+binder 5293:5295 <> str:28
+R5334:5338 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5314:5318 LTL.ltl <> trace def
+R5331:5333 LTL.liveness <> str:28 var
+R5320:5329 LTL.liveness <> liveness.transition var
+R5366:5370 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5339:5345 LTL.ltl <> fairstr def
+R5363:5365 LTL.liveness <> str:28 var
+R5358:5361 LTL.liveness <> liveness.fair var
+R5347:5356 LTL.liveness <> liveness.transition var
+R5371:5380 LTL.ltl <> once_until def
+R5432:5434 LTL.liveness <> str:28 var
+R5408:5427 LTL.ltl <> state2stream_formula def
+R5429:5429 LTL.liveness <> Q:26 var
+R5383:5402 LTL.ltl <> state2stream_formula def
+R5404:5404 LTL.liveness <> P:25 var
+R5445:5454 LTL.ltl <> once_until def
+R5472:5483 LTL.ltl <> leads_to_via def
+R5533:5539 LTL.ltl <> implies def
+R5685:5701 LTL.liveness <> one_step_leads_to thm
+R5685:5701 LTL.liveness <> one_step_leads_to thm
+R5823:5830 LTL.liveness liveness <> sec

@@ -18,9 +18,10 @@
 (*                                fairness.v                                *)
 (****************************************************************************)
 
-Section fairness.
 
 Require Import congruence.
+
+Section fairness.
 
 Variables (state label : Set) (transition : label -> relation state)
   (fair : label -> Prop).

@@ -17,11 +17,11 @@
 (****************************************************************************)
 (*                              termination.v                               *)
 (****************************************************************************)
+Require Export ltl.
+Require Import Relations.
 
 Section termination.
 
-Require Export ltl.
-Require Import Relations.
 
 Variables (Alpha : Set) (state : Set) (r : relation Alpha)
   (meas : state -> Alpha -> Prop).

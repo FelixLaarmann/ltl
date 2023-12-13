@@ -1,0 +1,252 @@
+DIGEST edc1ec3114383dcc2aff53e047422b98
+FLTL.safety
+R1516:1518 LTL.ltl <> <> lib
+sec 1531:1536 <> safety
+var 1552:1556 safety state
+var 1558:1562 safety label
+var 1572:1581 safety transition
+var 1613:1622 safety init_state
+R1590:1593 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1585:1589 LTL.safety <> label:1 var
+R1594:1601 Coq.Relations.Relation_Definitions <> relation def
+R1603:1607 LTL.safety <> state:2 var
+R1631:1634 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1626:1630 LTL.safety <> state:2 var
+syndef 1653:1658 <> Stream
+R1664:1669 LTL.ltl <> stream coind
+R1671:1675 LTL.safety <> safety.state var
+syndef 1703:1715 <> State_formula
+R1721:1733 LTL.ltl <> state_formula def
+R1735:1739 LTL.safety <> safety.state var
+syndef 1767:1780 <> Stream_formula
+R1786:1799 LTL.ltl <> stream_formula def
+R1801:1805 LTL.safety <> safety.state var
+syndef 1833:1841 <> Invariant
+R1847:1855 LTL.ltl <> invariant def
+R1857:1866 LTL.safety <> safety.transition var
+syndef 1894:1909 <> None_or_one_step
+R1915:1930 LTL.ltl <> none_or_one_step ind
+R1932:1941 LTL.safety <> safety.transition var
+syndef 1969:1973 <> Trace
+R1979:1983 LTL.ltl <> trace def
+R1985:1994 LTL.safety <> safety.transition var
+syndef 2022:2025 <> Safe
+R2031:2034 LTL.ltl <> safe def
+R2047:2056 LTL.safety <> safety.transition var
+R2036:2045 LTL.safety <> safety.init_state var
+syndef 2084:2086 <> Run
+R2092:2094 LTL.ltl <> run def
+R2107:2116 LTL.safety <> safety.transition var
+R2096:2105 LTL.safety <> safety.init_state var
+prf 2223:2239 <> always_assumption
+R2257:2270 LTL.ltl <> stream_formula def
+R2272:2276 LTL.safety <> safety.state var
+binder 2251:2251 <> P:5
+binder 2253:2253 <> Q:6
+R2280:2280 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2329:2334 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2294:2299 LTL.ltl <> stream coind
+R2301:2305 LTL.safety <> safety.state var
+binder 2288:2290 <> str:7
+R2320:2323 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2308:2313 LTL.ltl <> always coind
+R2317:2319 LTL.safety <> str:7 var
+R2315:2315 LTL.safety <> Q:6 var
+R2324:2324 LTL.safety <> P:5 var
+R2326:2328 LTL.safety <> str:7 var
+R2348:2353 LTL.ltl <> stream coind
+R2355:2359 LTL.safety <> safety.state var
+binder 2342:2344 <> str:8
+R2374:2377 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2362:2367 LTL.ltl <> always coind
+R2371:2373 LTL.safety <> str:8 var
+R2369:2369 LTL.safety <> Q:6 var
+R2378:2383 LTL.ltl <> always coind
+R2387:2389 LTL.safety <> str:8 var
+R2385:2385 LTL.safety <> P:5 var
+prf 2626:2643 <> always_idempotence
+R2660:2673 LTL.ltl <> stream_formula def
+R2675:2679 LTL.safety <> safety.state var
+binder 2656:2656 <> Q:9
+R2689:2694 LTL.ltl <> stream coind
+R2696:2700 LTL.safety <> safety.state var
+binder 2683:2685 <> str:10
+R2717:2720 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2705:2710 LTL.ltl <> always coind
+R2714:2716 LTL.safety <> str:10 var
+R2712:2712 LTL.safety <> Q:9 var
+R2721:2726 LTL.ltl <> always coind
+R2739:2741 LTL.safety <> str:10 var
+R2729:2734 LTL.ltl <> always coind
+R2736:2736 LTL.safety <> Q:9 var
+prf 2844:2851 <> inv_clos
+R2867:2879 LTL.ltl <> state_formula def
+R2881:2885 LTL.safety <> safety.state var
+binder 2863:2863 <> P:11
+R2911:2915 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2889:2897 LTL.ltl <> invariant def
+R2910:2910 LTL.safety <> P:11 var
+R2899:2908 LTL.safety <> safety.transition var
+R2929:2933 LTL.safety <> safety.state var
+binder 2923:2923 <> s:12
+binder 2925:2925 <> t:13
+R2967:2970 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2936:2951 LTL.ltl <> none_or_one_step ind
+R2966:2966 LTL.safety <> t:13 var
+R2964:2964 LTL.safety <> s:12 var
+R2953:2962 LTL.safety <> safety.transition var
+R2974:2977 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2971:2971 LTL.safety <> P:11 var
+R2973:2973 LTL.safety <> s:12 var
+R2978:2978 LTL.safety <> P:11 var
+R2980:2980 LTL.safety <> t:13 var
+prf 3088:3093 <> induct
+R3109:3121 LTL.ltl <> state_formula def
+R3123:3127 LTL.safety <> safety.state var
+binder 3105:3105 <> P:14
+R3153:3157 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3131:3139 LTL.ltl <> invariant def
+R3152:3152 LTL.safety <> P:14 var
+R3141:3150 LTL.safety <> safety.transition var
+R3171:3176 LTL.ltl <> stream coind
+R3178:3182 LTL.safety <> safety.state var
+binder 3165:3167 <> str:15
+R3206:3210 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3186:3190 LTL.ltl <> trace def
+R3203:3205 LTL.safety <> str:15 var
+R3192:3201 LTL.safety <> safety.transition var
+R3227:3230 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3211:3211 LTL.safety <> P:14 var
+R3214:3221 LTL.ltl <> head_str def
+R3223:3225 LTL.safety <> str:15 var
+R3231:3236 LTL.ltl <> always coind
+R3263:3265 LTL.safety <> str:15 var
+R3239:3258 LTL.ltl <> state2stream_formula def
+R3260:3260 LTL.safety <> P:14 var
+R3291:3310 LTL.ltl <> state2stream_formula def
+R3596:3603 LTL.safety <> inv_clos thm
+R3596:3603 LTL.safety <> inv_clos thm
+prf 3645:3650 <> safety
+R3666:3678 LTL.ltl <> state_formula def
+R3680:3684 LTL.safety <> safety.state var
+binder 3662:3662 <> P:16
+R3688:3688 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3726:3731 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3700:3704 LTL.safety <> safety.state var
+binder 3696:3696 <> s:17
+R3719:3722 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3707:3716 LTL.safety <> safety.init_state var
+R3718:3718 LTL.safety <> s:17 var
+R3723:3723 LTL.safety <> P:16 var
+R3725:3725 LTL.safety <> s:17 var
+R3754:3758 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3732:3740 LTL.ltl <> invariant def
+R3753:3753 LTL.safety <> P:16 var
+R3742:3751 LTL.safety <> safety.transition var
+R3759:3762 LTL.ltl <> safe def
+R3787:3806 LTL.ltl <> state2stream_formula def
+R3808:3808 LTL.safety <> P:16 var
+R3775:3784 LTL.safety <> safety.transition var
+R3764:3773 LTL.safety <> safety.init_state var
+R3836:3839 LTL.ltl <> safe def
+R3872:3874 LTL.ltl <> run def
+R3928:3933 LTL.safety <> induct thm
+R3928:3933 LTL.safety <> induct thm
+prf 4036:4048 <> always_on_run
+R4068:4081 LTL.ltl <> stream_formula def
+R4083:4087 LTL.safety <> safety.state var
+binder 4060:4060 <> F:18
+binder 4062:4062 <> P:19
+binder 4064:4064 <> I:20
+R4119:4123 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4091:4094 LTL.ltl <> safe def
+R4118:4118 LTL.safety <> I:20 var
+R4107:4116 LTL.safety <> safety.transition var
+R4096:4105 LTL.safety <> safety.init_state var
+R4124:4124 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4215:4220 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4138:4143 LTL.ltl <> stream coind
+R4145:4149 LTL.safety <> safety.state var
+binder 4132:4134 <> str:21
+R4174:4177 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4154:4158 LTL.ltl <> trace def
+R4171:4173 LTL.safety <> str:21 var
+R4160:4169 LTL.safety <> safety.transition var
+R4190:4193 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4178:4183 LTL.ltl <> always coind
+R4187:4189 LTL.safety <> str:21 var
+R4185:4185 LTL.safety <> F:18 var
+R4206:4209 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4194:4199 LTL.ltl <> always coind
+R4203:4205 LTL.safety <> str:21 var
+R4201:4201 LTL.safety <> I:20 var
+R4210:4210 LTL.safety <> P:19 var
+R4212:4214 LTL.safety <> str:21 var
+R4234:4239 LTL.ltl <> stream coind
+R4241:4245 LTL.safety <> safety.state var
+binder 4228:4230 <> str:22
+R4278:4281 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4249:4251 LTL.ltl <> run def
+R4275:4277 LTL.safety <> str:22 var
+R4264:4273 LTL.safety <> safety.transition var
+R4253:4262 LTL.safety <> safety.init_state var
+R4294:4297 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4282:4287 LTL.ltl <> always coind
+R4291:4293 LTL.safety <> str:22 var
+R4289:4289 LTL.safety <> F:18 var
+R4298:4303 LTL.ltl <> always coind
+R4307:4309 LTL.safety <> str:22 var
+R4305:4305 LTL.safety <> P:19 var
+R4321:4324 LTL.ltl <> safe def
+R4342:4344 LTL.ltl <> run def
+R4430:4435 LTL.ltl <> always coind
+R4430:4435 LTL.ltl <> always coind
+prf 4724:4739 <> trace_assumption
+R4755:4768 LTL.ltl <> stream_formula def
+R4770:4774 LTL.safety <> safety.state var
+binder 4751:4751 <> P:23
+R4778:4778 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4835:4840 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4792:4797 LTL.ltl <> stream coind
+R4799:4803 LTL.safety <> safety.state var
+binder 4786:4788 <> str:24
+R4826:4829 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4806:4810 LTL.ltl <> trace def
+R4823:4825 LTL.safety <> str:24 var
+R4812:4821 LTL.safety <> safety.transition var
+R4830:4830 LTL.safety <> P:23 var
+R4832:4834 LTL.safety <> str:24 var
+R4854:4859 LTL.ltl <> stream coind
+R4861:4865 LTL.safety <> safety.state var
+binder 4848:4850 <> str:25
+R4888:4891 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4868:4872 LTL.ltl <> trace def
+R4885:4887 LTL.safety <> str:25 var
+R4874:4883 LTL.safety <> safety.transition var
+R4892:4897 LTL.ltl <> always coind
+R4901:4903 LTL.safety <> str:25 var
+R4899:4899 LTL.safety <> P:23 var
+R4914:4918 LTL.ltl <> trace def
+R5005:5010 LTL.ltl <> stream coind
+R5012:5016 LTL.safety <> safety.state var
+binder 4999:5001 <> str:26
+R5031:5046 LTL.ltl <> none_or_one_step ind
+R5075:5082 LTL.ltl <> head_str def
+R5085:5090 LTL.ltl <> tl_str def
+R5092:5094 LTL.safety <> str:26 var
+R5060:5067 LTL.ltl <> head_str def
+R5069:5071 LTL.safety <> str:26 var
+R5048:5057 LTL.safety <> safety.transition var
+R4960:4976 LTL.safety <> always_assumption thm
+R5005:5010 LTL.ltl <> stream coind
+R5012:5016 LTL.safety <> safety.state var
+binder 4999:5001 <> str:27
+R5031:5046 LTL.ltl <> none_or_one_step ind
+R5075:5082 LTL.ltl <> head_str def
+R5085:5090 LTL.ltl <> tl_str def
+R5092:5094 LTL.safety <> str:27 var
+R5060:5067 LTL.ltl <> head_str def
+R5069:5071 LTL.safety <> str:27 var
+R5048:5057 LTL.safety <> safety.transition var
+R4960:4976 LTL.safety <> always_assumption thm
+R5124:5129 LTL.safety safety <> sec

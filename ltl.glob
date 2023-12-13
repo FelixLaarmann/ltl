@@ -1,0 +1,465 @@
+DIGEST 14232b371e7ae65db36dc6b804e8adc8
+FLTL.ltl
+R1517:1525 Coq.Relations.Relations <> <> lib
+sec 1537:1539 <> ltl
+var 1602:1606 ltl state
+var 1616:1620 ltl label
+var 1630:1639 ltl init_state
+var 1661:1670 ltl transition
+var 1700:1703 ltl fair
+R1648:1651 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1643:1647 LTL.ltl <> state:1 var
+R1679:1682 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1674:1678 LTL.ltl <> label:2 var
+R1683:1690 Coq.Relations.Relation_Definitions <> relation def
+R1692:1696 LTL.ltl <> state:1 var
+R1712:1715 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1707:1711 LTL.ltl <> label:2 var
+ind 1815:1818 <> step
+constr 1848:1854 <> C_trans
+R1827:1831 LTL.ltl <> ltl.state var
+binder 1821:1821 <> s:6
+binder 1823:1823 <> t:7
+R1869:1873 LTL.ltl <> ltl.label var
+binder 1865:1865 <> a:10
+R1892:1895 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R1876:1885 LTL.ltl <> ltl.transition var
+R1891:1891 LTL.ltl <> t:7 var
+R1889:1889 LTL.ltl <> s:6 var
+R1887:1887 LTL.ltl <> a:10 var
+R1896:1899 LTL.ltl <> step:8 ind
+R1903:1903 LTL.ltl <> t:7 var
+R1901:1901 LTL.ltl <> s:6 var
+ind 1917:1923 <> enabled
+constr 1972:1982 <> c_pos_trans
+R1930:1937 Coq.Relations.Relation_Definitions <> relation def
+R1939:1943 LTL.ltl <> ltl.state var
+binder 1926:1926 <> r:11
+R1951:1955 LTL.ltl <> ltl.state var
+binder 1947:1947 <> s:12
+R1997:2001 LTL.ltl <> ltl.state var
+binder 1993:1993 <> t:15
+R2009:2012 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2004:2004 LTL.ltl <> r:11 var
+R2006:2006 LTL.ltl <> s:12 var
+R2008:2008 LTL.ltl <> t:15 var
+R2013:2019 LTL.ltl <> enabled:13 ind
+R2023:2023 LTL.ltl <> s:12 var
+R2021:2021 LTL.ltl <> r:11 var
+ind 2037:2052 <> none_or_one_step
+constr 2089:2092 <> none
+constr 2121:2123 <> one
+R2059:2063 LTL.ltl <> ltl.state var
+binder 2055:2055 <> s:16
+R2073:2076 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2068:2072 LTL.ltl <> ltl.state var
+R2096:2111 LTL.ltl <> none_or_one_step:17 ind
+R2115:2115 LTL.ltl <> s:16 var
+R2113:2113 LTL.ltl <> s:16 var
+R2138:2142 LTL.ltl <> ltl.state var
+binder 2134:2134 <> t:19
+R2153:2156 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2145:2148 LTL.ltl <> step ind
+R2152:2152 LTL.ltl <> t:19 var
+R2150:2150 LTL.ltl <> s:16 var
+R2157:2172 LTL.ltl <> none_or_one_step:17 ind
+R2176:2176 LTL.ltl <> t:19 var
+R2174:2174 LTL.ltl <> s:16 var
+ind 2273:2278 <> stream
+constr 2293:2300 <> cons_str
+R2309:2312 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2304:2308 LTL.ltl <> ltl.state var
+R2319:2322 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2313:2318 LTL.ltl <> stream:20 ind
+R2323:2328 LTL.ltl <> stream:20 ind
+def 2343:2350 <> head_str
+R2359:2364 LTL.ltl <> stream coind
+binder 2353:2355 <> str:22
+R2369:2373 LTL.ltl <> ltl.state var
+R2386:2388 LTL.ltl <> str:22 var
+R2399:2406 LTL.ltl <> cons_str constr
+def 2436:2441 <> tl_str
+R2450:2455 LTL.ltl <> stream coind
+binder 2444:2446 <> str:24
+R2460:2465 LTL.ltl <> stream coind
+R2478:2480 LTL.ltl <> str:24 var
+R2491:2498 LTL.ltl <> cons_str constr
+def 2530:2543 <> stream_formula
+R2554:2557 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2548:2553 LTL.ltl <> stream coind
+def 2576:2588 <> state_formula
+R2598:2601 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2593:2597 LTL.ltl <> ltl.state var
+def 2621:2640 <> state2stream_formula
+R2647:2659 LTL.ltl <> state_formula def
+binder 2643:2643 <> P:26
+R2664:2677 LTL.ltl <> stream_formula def
+binder 2688:2690 <> str:27
+R2695:2695 LTL.ltl <> P:26 var
+R2698:2705 LTL.ltl <> head_str def
+R2707:2709 LTL.ltl <> str:27 var
+def 2725:2727 <> and
+R2736:2749 LTL.ltl <> stream_formula def
+binder 2730:2730 <> P:28
+binder 2732:2732 <> Q:29
+R2754:2767 LTL.ltl <> stream_formula def
+binder 2778:2780 <> str:30
+R2790:2793 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R2785:2785 LTL.ltl <> P:28 var
+R2787:2789 LTL.ltl <> str:30 var
+R2794:2794 LTL.ltl <> Q:29 var
+R2796:2798 LTL.ltl <> str:30 var
+def 2813:2821 <> and_state
+R2830:2842 LTL.ltl <> state_formula def
+binder 2824:2824 <> P:31
+binder 2826:2826 <> Q:32
+R2847:2859 LTL.ltl <> state_formula def
+binder 2870:2870 <> s:33
+R2878:2881 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R2875:2875 LTL.ltl <> P:31 var
+R2877:2877 LTL.ltl <> s:33 var
+R2882:2882 LTL.ltl <> Q:32 var
+R2884:2884 LTL.ltl <> s:33 var
+def 2899:2906 <> leads_to
+R2915:2927 LTL.ltl <> state_formula def
+binder 2909:2909 <> P:34
+binder 2911:2911 <> Q:35
+R2955:2959 LTL.ltl <> ltl.state var
+binder 2949:2949 <> s:36
+binder 2951:2951 <> t:37
+R2965:2968 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2962:2962 LTL.ltl <> P:34 var
+R2964:2964 LTL.ltl <> s:36 var
+R2977:2980 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R2969:2972 LTL.ltl <> step ind
+R2976:2976 LTL.ltl <> t:37 var
+R2974:2974 LTL.ltl <> s:36 var
+R2981:2981 LTL.ltl <> Q:35 var
+R2983:2983 LTL.ltl <> t:37 var
+def 3078:3081 <> next
+R3088:3101 LTL.ltl <> stream_formula def
+binder 3084:3084 <> P:38
+R3106:3119 LTL.ltl <> stream_formula def
+binder 3130:3132 <> str:39
+R3137:3137 LTL.ltl <> P:38 var
+R3140:3145 LTL.ltl <> tl_str def
+R3147:3149 LTL.ltl <> str:39 var
+ind 3166:3171 <> always
+constr 3218:3225 <> C_always
+R3178:3191 LTL.ltl <> stream_formula def
+binder 3174:3174 <> P:40
+R3202:3205 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3196:3201 LTL.ltl <> stream coind
+R3248:3252 LTL.ltl <> ltl.state var
+binder 3243:3244 <> s0:43
+R3262:3267 LTL.ltl <> stream coind
+binder 3256:3258 <> str:44
+R3296:3299 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3277:3277 LTL.ltl <> P:40 var
+R3280:3287 LTL.ltl <> cons_str constr
+R3292:3294 LTL.ltl <> str:44 var
+R3289:3290 LTL.ltl <> s0:43 var
+R3312:3315 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3300:3305 LTL.ltl <> always:41 ind
+R3309:3311 LTL.ltl <> str:44 var
+R3307:3307 LTL.ltl <> P:40 var
+R3316:3321 LTL.ltl <> always:41 ind
+R3326:3333 LTL.ltl <> cons_str constr
+R3338:3340 LTL.ltl <> str:44 var
+R3335:3336 LTL.ltl <> s0:43 var
+R3323:3323 LTL.ltl <> P:40 var
+def 3356:3360 <> trace
+R3370:3373 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3364:3369 LTL.ltl <> stream coind
+R3384:3389 LTL.ltl <> always coind
+R3406:3411 LTL.ltl <> stream coind
+binder 3400:3402 <> str:45
+R3421:3436 LTL.ltl <> none_or_one_step ind
+R3454:3461 LTL.ltl <> head_str def
+R3464:3469 LTL.ltl <> tl_str def
+R3471:3473 LTL.ltl <> str:45 var
+R3439:3446 LTL.ltl <> head_str def
+R3448:3450 LTL.ltl <> str:45 var
+def 3503:3505 <> run
+R3514:3519 LTL.ltl <> stream coind
+binder 3508:3510 <> str:46
+R3559:3562 Coq.Init.Logic <> ::type_scope:x_'/\'_x not
+R3534:3543 LTL.ltl <> ltl.init_state var
+R3546:3553 LTL.ltl <> head_str def
+R3555:3557 LTL.ltl <> str:46 var
+R3563:3567 LTL.ltl <> trace def
+R3569:3571 LTL.ltl <> str:46 var
+ind 3585:3594 <> eventually
+constr 3641:3644 <> ev_h
+constr 3699:3702 <> ev_t
+R3601:3614 LTL.ltl <> stream_formula def
+binder 3597:3597 <> P:47
+R3625:3628 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3619:3624 LTL.ltl <> stream coind
+R3661:3666 LTL.ltl <> stream coind
+binder 3655:3657 <> str:50
+R3674:3677 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3669:3669 LTL.ltl <> P:47 var
+R3671:3673 LTL.ltl <> str:50 var
+R3678:3687 LTL.ltl <> eventually:48 ind
+R3691:3693 LTL.ltl <> str:50 var
+R3689:3689 LTL.ltl <> P:47 var
+R3724:3728 LTL.ltl <> ltl.state var
+binder 3720:3720 <> s:51
+R3738:3743 LTL.ltl <> stream coind
+binder 3732:3734 <> str:52
+R3769:3772 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3753:3762 LTL.ltl <> eventually:48 ind
+R3766:3768 LTL.ltl <> str:52 var
+R3764:3764 LTL.ltl <> P:47 var
+R3773:3782 LTL.ltl <> eventually:48 ind
+R3787:3794 LTL.ltl <> cons_str constr
+R3798:3800 LTL.ltl <> str:52 var
+R3796:3796 LTL.ltl <> s:51 var
+R3784:3784 LTL.ltl <> P:47 var
+ind 3815:3819 <> until
+constr 3868:3874 <> until_h
+constr 3926:3932 <> until_t
+R3828:3841 LTL.ltl <> stream_formula def
+binder 3822:3822 <> P:53
+binder 3824:3824 <> Q:54
+R3852:3855 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3846:3851 LTL.ltl <> stream coind
+R3891:3896 LTL.ltl <> stream coind
+binder 3885:3887 <> str:57
+R3904:3907 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3899:3899 LTL.ltl <> Q:54 var
+R3901:3903 LTL.ltl <> str:57 var
+R3908:3912 LTL.ltl <> until:55 ind
+R3918:3920 LTL.ltl <> str:57 var
+R3916:3916 LTL.ltl <> Q:54 var
+R3914:3914 LTL.ltl <> P:53 var
+R3954:3958 LTL.ltl <> ltl.state var
+binder 3950:3950 <> s:58
+R3968:3973 LTL.ltl <> stream coind
+binder 3962:3964 <> str:59
+R4001:4004 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R3983:3983 LTL.ltl <> P:53 var
+R3986:3993 LTL.ltl <> cons_str constr
+R3997:3999 LTL.ltl <> str:59 var
+R3995:3995 LTL.ltl <> s:58 var
+R4018:4021 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4005:4009 LTL.ltl <> until:55 ind
+R4015:4017 LTL.ltl <> str:59 var
+R4013:4013 LTL.ltl <> Q:54 var
+R4011:4011 LTL.ltl <> P:53 var
+R4022:4026 LTL.ltl <> until:55 ind
+R4033:4040 LTL.ltl <> cons_str constr
+R4044:4046 LTL.ltl <> str:59 var
+R4042:4042 LTL.ltl <> s:58 var
+R4030:4030 LTL.ltl <> Q:54 var
+R4028:4028 LTL.ltl <> P:53 var
+ind 4063:4068 <> unless
+constr 4117:4124 <> unless_h
+constr 4177:4184 <> unless_t
+R4077:4090 LTL.ltl <> stream_formula def
+binder 4071:4071 <> P:60
+binder 4073:4073 <> Q:61
+R4101:4104 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4095:4100 LTL.ltl <> stream coind
+R4141:4146 LTL.ltl <> stream coind
+binder 4135:4137 <> str:64
+R4154:4157 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4149:4149 LTL.ltl <> Q:61 var
+R4151:4153 LTL.ltl <> str:64 var
+R4158:4163 LTL.ltl <> unless:62 ind
+R4169:4171 LTL.ltl <> str:64 var
+R4167:4167 LTL.ltl <> Q:61 var
+R4165:4165 LTL.ltl <> P:60 var
+R4206:4210 LTL.ltl <> ltl.state var
+binder 4202:4202 <> s:65
+R4220:4225 LTL.ltl <> stream coind
+binder 4214:4216 <> str:66
+R4253:4256 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4235:4235 LTL.ltl <> P:60 var
+R4238:4245 LTL.ltl <> cons_str constr
+R4249:4251 LTL.ltl <> str:66 var
+R4247:4247 LTL.ltl <> s:65 var
+R4271:4274 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4257:4262 LTL.ltl <> unless:62 ind
+R4268:4270 LTL.ltl <> str:66 var
+R4266:4266 LTL.ltl <> Q:61 var
+R4264:4264 LTL.ltl <> P:60 var
+R4275:4280 LTL.ltl <> unless:62 ind
+R4287:4294 LTL.ltl <> cons_str constr
+R4298:4300 LTL.ltl <> str:66 var
+R4296:4296 LTL.ltl <> s:65 var
+R4284:4284 LTL.ltl <> Q:61 var
+R4282:4282 LTL.ltl <> P:60 var
+def 4397:4412 <> infinitely_often
+R4419:4432 LTL.ltl <> stream_formula def
+binder 4415:4415 <> P:67
+R4446:4449 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4440:4445 LTL.ltl <> stream coind
+R4458:4463 LTL.ltl <> always coind
+R4466:4475 LTL.ltl <> eventually ind
+R4477:4477 LTL.ltl <> P:67 var
+def 4493:4499 <> implies
+R4508:4521 LTL.ltl <> stream_formula def
+binder 4502:4502 <> P:68
+binder 4504:4504 <> Q:69
+R4532:4535 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4526:4531 LTL.ltl <> stream coind
+R4546:4551 LTL.ltl <> always coind
+R4564:4569 LTL.ltl <> stream coind
+binder 4558:4560 <> str:70
+R4579:4582 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4574:4574 LTL.ltl <> P:68 var
+R4576:4578 LTL.ltl <> str:70 var
+R4583:4583 LTL.ltl <> Q:69 var
+R4585:4587 LTL.ltl <> str:70 var
+def 4603:4613 <> is_followed
+R4622:4635 LTL.ltl <> stream_formula def
+binder 4616:4616 <> P:71
+binder 4618:4618 <> Q:72
+R4645:4650 LTL.ltl <> stream coind
+binder 4639:4641 <> str:73
+R4670:4673 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4665:4665 LTL.ltl <> P:71 var
+R4667:4669 LTL.ltl <> str:73 var
+R4674:4683 LTL.ltl <> eventually ind
+R4687:4689 LTL.ltl <> str:73 var
+R4685:4685 LTL.ltl <> Q:72 var
+def 4704:4721 <> is_always_followed
+R4730:4743 LTL.ltl <> stream_formula def
+binder 4724:4724 <> P:74
+binder 4726:4726 <> Q:75
+R4757:4760 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4751:4756 LTL.ltl <> stream coind
+R4769:4774 LTL.ltl <> always coind
+R4777:4787 LTL.ltl <> is_followed def
+R4791:4791 LTL.ltl <> Q:75 var
+R4789:4789 LTL.ltl <> P:74 var
+def 4807:4828 <> eventually_permanently
+R4835:4848 LTL.ltl <> stream_formula def
+binder 4831:4831 <> P:76
+R4862:4865 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4856:4861 LTL.ltl <> stream coind
+R4874:4883 LTL.ltl <> eventually ind
+R4886:4891 LTL.ltl <> always coind
+R4893:4893 LTL.ltl <> P:76 var
+def 4909:4919 <> once_always
+R4928:4941 LTL.ltl <> stream_formula def
+binder 4922:4922 <> P:77
+binder 4924:4924 <> Q:78
+R4952:4955 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R4946:4951 LTL.ltl <> stream coind
+R4966:4972 LTL.ltl <> implies def
+R4977:4982 LTL.ltl <> always coind
+R4984:4984 LTL.ltl <> Q:78 var
+R4974:4974 LTL.ltl <> P:77 var
+def 5000:5011 <> leads_to_via
+R5022:5035 LTL.ltl <> stream_formula def
+binder 5014:5014 <> P:79
+binder 5016:5016 <> Q:80
+binder 5018:5018 <> R:81
+R5049:5052 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5043:5048 LTL.ltl <> stream coind
+R5061:5067 LTL.ltl <> implies def
+R5072:5076 LTL.ltl <> until ind
+R5080:5080 LTL.ltl <> R:81 var
+R5078:5078 LTL.ltl <> Q:80 var
+R5069:5069 LTL.ltl <> P:79 var
+def 5096:5105 <> once_until
+R5114:5127 LTL.ltl <> stream_formula def
+binder 5108:5108 <> P:82
+binder 5110:5110 <> Q:83
+R5138:5141 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5132:5137 LTL.ltl <> stream coind
+R5152:5163 LTL.ltl <> leads_to_via def
+R5169:5169 LTL.ltl <> Q:83 var
+R5167:5167 LTL.ltl <> P:82 var
+R5165:5165 LTL.ltl <> P:82 var
+def 5264:5271 <> fairness
+R5278:5282 LTL.ltl <> ltl.label var
+binder 5274:5274 <> a:84
+R5292:5297 LTL.ltl <> stream coind
+binder 5286:5288 <> str:85
+R5380:5385 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5312:5327 LTL.ltl <> infinitely_often def
+R5377:5379 LTL.ltl <> str:85 var
+R5330:5349 LTL.ltl <> state2stream_formula def
+R5352:5358 LTL.ltl <> enabled ind
+R5361:5370 LTL.ltl <> ltl.transition var
+R5372:5372 LTL.ltl <> a:84 var
+R5386:5395 LTL.ltl <> eventually ind
+R5479:5481 LTL.ltl <> str:85 var
+R5412:5417 LTL.ltl <> stream coind
+binder 5406:5408 <> str:86
+R5422:5431 LTL.ltl <> ltl.transition var
+R5451:5458 LTL.ltl <> head_str def
+R5461:5466 LTL.ltl <> tl_str def
+R5468:5470 LTL.ltl <> str:86 var
+R5436:5443 LTL.ltl <> head_str def
+R5445:5447 LTL.ltl <> str:86 var
+R5433:5433 LTL.ltl <> a:84 var
+ind 5495:5503 <> fair_step
+constr 5535:5541 <> c_fstep
+R5514:5518 LTL.ltl <> ltl.state var
+binder 5506:5507 <> s1:87
+binder 5509:5510 <> s2:88
+R5562:5566 LTL.ltl <> ltl.label var
+binder 5558:5558 <> a:91
+R5575:5578 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5569:5572 LTL.ltl <> ltl.fair var
+R5574:5574 LTL.ltl <> a:91 var
+R5597:5600 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5579:5588 LTL.ltl <> ltl.transition var
+R5595:5596 LTL.ltl <> s2:88 var
+R5592:5593 LTL.ltl <> s1:87 var
+R5590:5590 LTL.ltl <> a:91 var
+R5601:5609 LTL.ltl <> fair_step:89 ind
+R5614:5615 LTL.ltl <> s2:88 var
+R5611:5612 LTL.ltl <> s1:87 var
+def 5630:5636 <> fairstr
+R5646:5649 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5640:5645 LTL.ltl <> stream coind
+R5660:5675 LTL.ltl <> infinitely_often def
+binder 5686:5688 <> str:92
+R5730:5738 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R5698:5704 LTL.ltl <> enabled ind
+R5717:5724 LTL.ltl <> head_str def
+R5726:5728 LTL.ltl <> str:92 var
+R5706:5714 LTL.ltl <> fair_step ind
+R5739:5747 LTL.ltl <> fair_step ind
+R5765:5772 LTL.ltl <> head_str def
+R5775:5780 LTL.ltl <> tl_str def
+R5782:5784 LTL.ltl <> str:92 var
+R5750:5757 LTL.ltl <> head_str def
+R5759:5761 LTL.ltl <> str:92 var
+def 5802:5815 <> strong_fairstr
+R5824:5829 LTL.ltl <> stream coind
+binder 5818:5820 <> str:93
+R5844:5849 LTL.ltl <> always coind
+R5940:5942 LTL.ltl <> str:93 var
+R5856:5865 LTL.ltl <> eventually ind
+binder 5879:5882 <> str':94
+R5887:5895 LTL.ltl <> fair_step ind
+R5914:5921 LTL.ltl <> head_str def
+R5924:5929 LTL.ltl <> tl_str def
+R5931:5934 LTL.ltl <> str':94 var
+R5898:5905 LTL.ltl <> head_str def
+R5907:5910 LTL.ltl <> str':94 var
+def 6042:6050 <> invariant
+R6057:6069 LTL.ltl <> state_formula def
+binder 6053:6053 <> P:95
+R6082:6089 LTL.ltl <> leads_to def
+R6093:6093 LTL.ltl <> P:95 var
+R6091:6091 LTL.ltl <> P:95 var
+def 6108:6111 <> safe
+R6118:6131 LTL.ltl <> stream_formula def
+binder 6114:6114 <> P:96
+R6159:6164 LTL.ltl <> stream coind
+binder 6153:6155 <> str:97
+R6174:6177 Coq.Init.Logic <> ::type_scope:x_'->'_x not
+R6167:6169 LTL.ltl <> run def
+R6171:6173 LTL.ltl <> str:97 var
+R6178:6183 LTL.ltl <> always coind
+R6187:6189 LTL.ltl <> str:97 var
+R6185:6185 LTL.ltl <> P:96 var
+R6198:6200 LTL.ltl ltl <> sec

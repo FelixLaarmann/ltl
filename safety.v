@@ -17,10 +17,12 @@
 (****************************************************************************)
 (*                                  safety.v                                *)
 (****************************************************************************)
+Require Export ltl.
+
 
 Section safety.
 
-Require Export ltl.
+
 Variables (state label : Set) (transition : label -> relation state)
   (init_state : state -> Prop).
 
@@ -51,7 +53,7 @@ apply always_assumption; auto.
 inversion always_Q; assumption.
 Qed.
 
-Hint Resolve always_assumption.
+Hint Resolve always_assumption : core.
 
 Lemma always_idempotence :
  forall (Q : stream_formula state) (str : stream state),

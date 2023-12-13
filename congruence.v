@@ -18,9 +18,11 @@
 (*                               congruence.v                               *)
 (****************************************************************************)
 
-Section congruence.
 
 Require Export safety.
+
+Section congruence.
+
 Variables (state label : Set) (transition : label -> relation state)
   (init_state : state -> Prop).
         

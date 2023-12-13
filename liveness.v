@@ -17,10 +17,10 @@
 (****************************************************************************)
 (*                                liveness.v                                *)
 (****************************************************************************)
+Require Export ltl.
 
 Section liveness.
 
-Require Export ltl.
 Variables (state label : Set) (transition : label -> relation state)
   (init_state : state -> Prop) (fair : label -> Prop).
 
