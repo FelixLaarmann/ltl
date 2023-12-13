@@ -49,7 +49,7 @@ intros s str B_str until_B_C H_always_until H_always; constructor 2; auto.
 apply H_always_until; inversion H_always; assumption.
 Qed.
 
-Hint Resolve trans_until_leads.
+Hint Resolve trans_until_leads : core.
 
 Lemma trans_leads_to :
  forall (A B C D E : stream_formula state) (str : stream state),

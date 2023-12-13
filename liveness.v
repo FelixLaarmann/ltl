@@ -133,7 +133,7 @@ simpl in H2; constructor 2; auto.
 constructor 1; apply leads_P_Q with (s := s1); trivial.
 Qed.
 
-Hint Resolve one_step_leads_to.
+Hint Resolve one_step_leads_to : core.
 
 
 Lemma always_one_step_leads_to :

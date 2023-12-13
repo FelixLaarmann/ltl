@@ -95,7 +95,7 @@ simpl in H1; inversion H1; rewrite H2; generalize H0;
 rewrite <- H2; auto.
 Qed.
 
-Hint Resolve wf_leadsto.
+Hint Resolve wf_leadsto : core.
 
 Lemma wf_leadsto_rule :
  forall (A B C : state_formula state) (str : stream state),
