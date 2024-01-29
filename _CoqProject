@@ -1,9 +1,0 @@
--R . LTL
-
-congruence.v 
-fairness.v 
-leads_to.v 
-liveness.v 
-ltl.v 
-safety.v 
-termination.v 
