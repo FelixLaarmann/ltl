@@ -32,7 +32,7 @@ Definition configurationSearchSpace :=
     map (map snd) (list_power (seq 0 k) (map (compose Z.pred Z.of_nat) (seq 0 (n+1)))).
 
 Definition isConfig (c : configuration) : bool := 
-    Z.eqb (fold_right Z.add 0 c) (Z.of_nat (n - k)).
+    Nat.ltb 0 (length c) && Z.eqb (fold_right Z.add 0 c) (Z.of_nat (n - k)).
 
 Definition configurations : list(configuration) := 
     filter isConfig configurationSearchSpace.
@@ -197,13 +197,13 @@ Definition modifyMoveInRange (c : configuration) (mt : list move) (p : nat * nat
   end.
 
 Definition successor (c : configuration) (moves : list move) : configuration :=
-  rep (fold_left (fun (xs : list Z) (ys : list Z) => map (fun p => (fst p) + (snd p)) (combine xs ys)) (map (fun p => interpretMove (fst p) (snd p)) (combine (seq 1 k) (fold_left (modifyMoveInRange c) (pos c) (reorganizeMoves (pos c) moves)))) c).
-
+  if Nat.eqb (length moves) k  
+  then rep (fold_left (fun (xs : list Z) (ys : list Z) => map (fun p => (fst p) + (snd p)) (combine xs ys)) (map (fun p => interpretMove (fst p) (snd p)) (combine (seq 1 k) (fold_left (modifyMoveInRange c) (pos c) (reorganizeMoves (pos c) moves)))) c)
+  else [].
 
   (*
 Possible Lemma: For each input, successor computes a valid configuration.
 *)
-
 
 Fixpoint sequence (l : list (list (option move))) : list (list (option move)) :=
   match l with
@@ -232,6 +232,19 @@ Definition list_eqb (l1 l2 : list Z) : bool :=
     | left _ => true
     | right _ => false
   end.
+
+Lemma list_eqb_prop : forall (l1 l2 : list Z), list_eqb l1 l2 = true -> l1 = l2.
+Proof.
+intros l1 l2 H.
+unfold list_eqb in H. now destruct list_eq_dec as [EQ | NEQ].
+Qed.
+
+Lemma not_list_eqb_prop : forall (l1 l2 : list Z), list_eqb l1 l2 = false -> l1 <> l2.
+Proof.
+intros l1 l2 H.
+unfold list_eqb in H. now destruct list_eq_dec as [EQ | NEQ].
+Qed.
+
 
 Definition option_eqb (o1 o2 : option move) : bool :=
   match o1, o2 with
@@ -268,15 +281,12 @@ apply dec_move.
 Defined.
 
 Definition opponentChoices (ms : list (option move)) : list (list move) :=
-  map (fun x => 
-    fst (fold_right 
-      (fun (om : option move) (p : (list move) * (list move)) => 
-        match om with
-          | Some m => (m :: (fst p), snd p)
-          | None => ((hd Clockwise (snd p)) :: (fst p), tl (snd p))
-        end) 
-      ([], x)
-      ms)) (sequence' (repeat [Clockwise; CounterClockwise] (count_occ dec_option_move ms None))).
+  sequence' (map (fun o =>
+    match o with
+      | Some m => [m]
+      | None => [Clockwise; CounterClockwise]
+    end
+  ) ms).
 
 Definition gatheredConfig : configuration := (repeat (-1) (Nat.pred k)) ++ [Z.of_nat (Nat.pred n)].
 
@@ -290,19 +300,147 @@ Definition losingConfigs : list configuration :=
   filter
     (fun c => (negb (list_eqb c gatheredConfig)) && (
       let vs := nodup dec_listZ (views c) in
-      if Nat.eqb (length vs) 1 then let v := hd [] vs in (list_eqb v (rev v)) || ((Z.even (hd 1 v)) && (Z.even (last v 1))) else false
+      Nat.eqb (length vs) 1 && (let v := hd [] vs in (list_eqb v (rev v)) || ((Z.even (hd 1 v)) && (Z.even (last v 1)))) 
       ))
     configuration_quotient.
+
+Definition nonLosingConfigs : list configuration :=
+  filter
+    (fun c => (list_eqb c gatheredConfig) || (
+      let vs := nodup dec_listZ (views c) in
+      (Nat.eqb (length vs) 1) && (let v := hd [] vs in negb (list_eqb v (rev v)) || ((Z.even (hd 1 v)) && (Z.even (last v 1)))) 
+      ))
+    configuration_quotient.
+
+Lemma losing_dec : forall (c : configuration), In c configurations -> (In c losingConfigs) \/ (In c nonLosingConfigs).
+Proof.
+intros c.
+intros H.
+unfold configurations in H. apply filter_In in H. destruct H as [H1 H2].
+unfold configurationSearchSpace in H1. apply in_map_iff in H1. destruct H1. destruct H.
+Admitted.
+
+
 
 (* init for ltl *)
 Definition nonLosing (c : configuration) : Prop := In c (flat_map (fun conf => remove dec_configuration conf configuration_quotient) losingConfigs).
 
+Definition nonLosing' (c : configuration) : Prop := In c nonLosingConfigs.
+
+Lemma nonLosing_spec_test (c: configuration) : nonLosing c -> False.
+Proof.
+intros H.
+unfold nonLosing in H.
+apply in_flat_map in H.
+destruct H as [x [H_in_nL H_in_conf]].
+unfold losingConfigs in H_in_nL.
+apply filter_In in H_in_nL.
+destruct H_in_nL as [H_cq H].
+apply in_remove in H_in_conf.
+destruct H_in_conf.
+Abort.
+
+(* Look up the concrete definition in literature, this will do it for our cases at the moment *)
+Lemma nonLosing_spec (c : configuration) : nonLosing' c -> In c configuration_quotient -> c = gatheredConfig \/
+  (length (nodup dec_listZ (views c)) = S 0) /\ 
+  ((hd [] (nodup dec_listZ (views c))) <> (rev (hd [] (nodup dec_listZ (views c)))) \/ 
+  Z.Even (hd 1 (hd [] (nodup dec_listZ (views c)))) /\ Z.Even (last (hd [] (nodup dec_listZ (views c))) 1)).
+Proof.
+intros H_nonL H_cq.
+unfold nonLosing' in H_nonL.
+unfold nonLosingConfigs in H_nonL.
+apply filter_In in H_nonL.
+destruct H_nonL as [H H_spec]. clear H.
+apply orb_prop in H_spec. destruct H_spec.
+apply list_eqb_prop in H.
+- apply or_introl. easy.
+- apply or_intror. apply andb_prop in H. destruct H as [H1 H2]. split.
+{
+  apply Nat.eqb_eq. easy.
+}
+apply orb_prop in H2. destruct H2.
+{
+  apply or_introl. apply negb_true_iff in H. 
+  now apply not_list_eqb_prop in H.
+}
+eapply andb_prop in H. destruct H as [H2 H3].
+apply or_intror. 
+apply Zeven_bool_iff in H2. apply Zeven_equiv in H2. 
+apply Zeven_bool_iff in H3. apply Zeven_equiv in H3.
+easy.
+Qed.
 
 Definition allTransitions : list (configuration * configuration) :=
   flat_map 
   (fun c => map (fun s => (c, s)) (map (successor c) (opponentChoices (map strategy (views c)))))
   configuration_quotient.
 
+Lemma opponentChoices_spec ms ls : In ms (opponentChoices ls) -> Forall2 (fun m l => 
+  match l with
+    | Some x => x = m
+    | None => Clockwise = m \/ CounterClockwise = m
+  end
+  ) ms ls.
+Proof.
+revert ms.
+induction ls.
+- simpl. now intros ms [<- | ?].
+- intros ms. cbn. intros H. apply in_flat_map in H as [m [H_m H_ms]]. apply in_flat_map in H_ms as [ms' [H_ms' H]]. apply IHls in H_ms'. destruct H; [ | easy].
+subst ms. constructor; [ | easy]. destruct a.
++ now destruct H_m.
++ cbn in H_m. destruct H_m as [? | [? | ?]]; tauto.
+Qed.
+
+
+Lemma Forall2_map_r (X Y Z : Type) (P : X -> Z -> Prop) (f : Y -> Z) l1 l2 : Forall2 P l1 (map f l2) -> Forall2 (fun x y => P x (f y)) l1 l2.  
+Proof.
+intros H.
+assert (exists l, (map f l2) = l /\ Forall2 P l1 l).
+{
+  eexists. now split.
+}
+destruct H0 as [l [E H_l]].
+clear H.
+revert l2 E.
+induction H_l.
+- intros l2 E. apply map_eq_nil in E. rewrite E. apply Forall2_nil.
+- intros [ | z l2].
+  + easy.
+  + simpl. intros [=E1 E2]. subst. constructor.
+    * easy.
+    * now apply IHH_l.
+Qed.
+
+Lemma allTransitions_spec c1 c2 : In (c1, c2) allTransitions -> exists ms, In c1 configuration_quotient /\ successor c1 ms = c2 /\ Forall2 (fun (x : move) (y : list Z) => match strategy y with
+| Some x0 => x0 = x
+| None => Clockwise = x \/ CounterClockwise = x
+end) ms (views c1).
+Proof.
+intros H.
+apply in_flat_map in H.
+destruct H as [x [H_x H_t]].
+apply in_map_iff in H_t.
+destruct H_t as [c [[=E1 E2] H_c]].
+apply in_map_iff in H_c.
+destruct H_c as [ms [H_c H_ms]].
+apply opponentChoices_spec in H_ms.
+apply Forall2_map_r in H_ms.
+subst. 
+now exists ms.
+Qed.
+
+Lemma allTransitions_spec' c1 c2 : In (c1, c2) allTransitions -> exists ms, In c1 configuration_quotient /\ successor c1 ms = c2 /\ In ms (opponentChoices (map strategy (views c1))).
+Proof.
+intros H.
+apply in_flat_map in H.
+destruct H as [x [H_x H_t]].
+apply in_map_iff in H_t.
+destruct H_t as [c [[=E1 E2] H_c]].
+apply in_map_iff in H_c.
+destruct H_c as [ms [H_c H_ms]].
+subst. 
+now exists ms.
+Qed.
 
 Definition allTransitionsLabeled (u : unit) : relation configuration :=
   fun l r => In (l,r) allTransitions.
@@ -338,6 +476,12 @@ Definition correctStrategy := forall (s : stream configuration) (st : configurat
   (((head_str s) = st) /\ always (state2stream_formula (fun p => step allTransitionsLabeled (fst p) (snd p))) (zip_stream s (tl_str s))) -> 
   ltl.eventually (state2stream_formula (fun c => c = gatheredConfig)) s.
 
+Definition correctStrategy' := forall (s : stream configuration) (st : configuration), 
+  In st configuration_quotient ->
+  nonLosing' st ->
+  (((head_str s) = st) /\ always (state2stream_formula (fun p => step allTransitionsLabeled (fst p) (snd p))) (zip_stream s (tl_str s))) -> 
+  ltl.eventually (state2stream_formula (fun c => c = gatheredConfig)) s.
+
 End robotRing.
 
 Definition winningStrategy_k3_n6 (v : list Z) : option move := 
@@ -359,6 +503,25 @@ Definition winningStrategy_k3_n6 (v : list Z) : option move :=
     | _ => None
   end.
 
+  Definition rw_winningStrategy_k3_n6 (v : list Z) : option move := 
+    match v with
+      | [1;1;1] => None
+      | [0;0;3] => Some Clockwise
+      | [0;3;0] => Some Idle
+      | [3;0;0] => Some CounterClockwise
+      | [0;1;2] => Some Clockwise
+      | [1;2;0] => Some CounterClockwise
+      | [2;0;1] => Some CounterClockwise
+      | [0;4] => Some Idle
+      | [4; -1; 0] => Some CounterClockwise
+      | [1;3] => Some Clockwise
+      | [3; -1; 1] => Some CounterClockwise
+      | [2;2] => Some Idle
+      | [2; -1; 2] => Some Clockwise
+      | [5] => Some Idle
+      | _ => None
+    end.
+
 
 Lemma elim_stream : forall {A : Set} (s : stream A), s = cons_str (head_str s) (tl_str s).
 Proof.
@@ -375,6 +538,11 @@ Qed.
 Lemma zip_stream_eq_head : forall {A : Set} (s s' : stream A), head_str (zip_stream s s') = (head_str s, head_str s').
 Proof.
 intros A s s'. destruct s. destruct s'. reflexivity.
+Qed.
+
+Lemma zip_stream_eq_tail : forall {A : Set} (s s' : stream A), tl_str (zip_stream s s') = zip_stream (tl_str s) (tl_str s').
+Proof.
+intros A s s'. destruct s. destruct s'. cbn. reflexivity.
 Qed.
 
 Lemma strategy_step : forall (s : stream configuration),
@@ -406,6 +574,146 @@ Qed.
 Compute allTransitions 3 6 winningStrategy_k3_n6.
 
 
+Lemma strategyWins' : correctStrategy' 3 6 winningStrategy_k3_n6.
+Proof.
+unfold correctStrategy'.
+intros s init H_conf H_nonL H_run.
+destruct H_run as [H_init H_trans].
+apply nonLosing_spec in H_nonL; [| easy].
+destruct H_nonL as [H_i | H_s].
+{ 
+  apply ev_h. now transitivity init.
+}
+destruct H_s as [H_lv H_s].
+destruct H_conf as [H_l | H].
+{ 
+  cbn in H_l. destruct H_s.
+  {
+    rewrite <- H_l in H. cbn in H. now clear -H.
+  }
+  rewrite <- H_l in H. cbn in H. destruct H as [H1 H2]. clear -H1. now apply Zeven_equiv in H1. 
+}
+simpl in H.
+eapply always_state_elim in H_trans. destruct H_trans as [H_step1 H_always].
+rewrite zip_stream_eq_head in H_step1. simpl in H_step1. 
+eapply always_state_elim in H_always. destruct H_always as [H_step2 H_always].
+rewrite zip_stream_eq_tail in H_step2. rewrite zip_stream_eq_head in H_step2. simpl in H_step2.
+rewrite H_init in H_step1.
+destruct H_step1 as [a1 H_step1].
+apply allTransitions_spec' in H_step1.
+destruct H_step1 as [m1 [H_conf_init [H_succ_init H_forall_init]]]. 
+destruct H_step2 as [a2 H_step2].
+apply allTransitions_spec' in H_step2.
+destruct H_step2 as [m2 [H_conf_succ [H_succ_succ H_forall_succ]]].
+
+destruct s as [s_hd s_tl]. apply ev_t. destruct s_tl as [s_tl_hd s_tl_tl]. apply ev_t. apply ev_h.
+
+destruct H.
+{
+  rewrite <- H in H_forall_init. cbn in H_forall_init. destruct H_forall_init as [H_m1 | H_false].
+  {
+    rewrite <- H_succ_init in H_conf_succ. rewrite <- H in H_conf_succ. rewrite <- H_m1 in H_conf_succ. cbv in H_conf_succ.
+    repeat (try (destruct H_conf_succ as [H_false | H_conf_succ]; [exfalso ; now clear -H_false | ])). 
+    destruct H_conf_succ as [H_false | H_conf_succ]. 
+    {
+      unfold state2stream_formula.
+    simpl in H_succ_succ. simpl in H_forall_succ. simpl in H_succ_init. 
+    rewrite <- H_succ_init in H_forall_succ. rewrite <- H_m1 in H_forall_succ. rewrite <- H in H_forall_succ. cbv in H_forall_succ.
+    destruct H_forall_succ as [H_m2 | H_f].
+    {
+      rewrite <- H_m2 in H_succ_succ. rewrite <- H_succ_succ. rewrite <- H_succ_init. rewrite <- H_m1. rewrite <- H. now cbv.
+    }
+    now clear -H_f.
+    }
+    repeat (try (destruct H_conf_succ as [H_false | H_conf_succ]; [exfalso ; now clear -H_false | ])); exfalso ; now clear -H_conf_succ. 
+  }
+  exfalso ; now clear -H_false.
+}
+repeat (try(destruct H; [ 
+  rewrite <- H in H_forall_init; cbn in H_forall_init; destruct H_forall_init as [H_m1 | H_false]; [
+    rewrite <- H_succ_init in H_conf_succ; rewrite <- H in H_conf_succ; rewrite <- H_m1 in H_conf_succ; cbv in H_conf_succ;
+    repeat (try (destruct H_conf_succ as [H_false | H_conf_succ]; [exfalso ; now clear -H_false | ])); 
+    destruct H_conf_succ as [H_false | H_conf_succ]; [ 
+      unfold state2stream_formula; simpl in H_succ_succ; simpl in H_forall_succ; simpl in H_succ_init; 
+      rewrite <- H_succ_init in H_forall_succ; rewrite <- H_m1 in H_forall_succ; rewrite <- H in H_forall_succ; cbv in H_forall_succ;
+      destruct H_forall_succ as [H_m2 | H_f]; [
+        rewrite <- H_m2 in H_succ_succ; rewrite <- H_succ_succ; rewrite <- H_succ_init; rewrite <- H_m1; rewrite <- H; now cbv
+        | now clear -H_f ]
+      | repeat (try (destruct H_conf_succ as [H_false | H_conf_succ]; [exfalso ; now clear -H_false | ])); exfalso ; now clear -H_conf_succ ]
+  |exfalso ; now clear -H_false ] 
+  |])); now clear -H.
+Qed.
+
+Lemma rw_strategyWins : correctStrategy' 3 6 rw_winningStrategy_k3_n6.
+Proof.
+unfold correctStrategy'.
+intros s init H_conf H_nonL H_run.
+destruct H_run as [H_init H_trans].
+apply nonLosing_spec in H_nonL; [| easy].
+destruct H_nonL as [H_i | H_s].
+{ 
+  apply ev_h. now transitivity init.
+}
+destruct H_s as [H_lv H_s].
+destruct H_conf as [H_l | H].
+{ 
+  cbn in H_l. destruct H_s.
+  {
+    rewrite <- H_l in H. cbn in H. now clear -H.
+  }
+  rewrite <- H_l in H. cbn in H. destruct H as [H1 H2]. clear -H1. now apply Zeven_equiv in H1. 
+}
+simpl in H.
+eapply always_state_elim in H_trans. destruct H_trans as [H_step1 H_always].
+rewrite zip_stream_eq_head in H_step1. simpl in H_step1. 
+eapply always_state_elim in H_always. destruct H_always as [H_step2 H_always].
+rewrite zip_stream_eq_tail in H_step2. rewrite zip_stream_eq_head in H_step2. simpl in H_step2.
+rewrite H_init in H_step1.
+destruct H_step1 as [a1 H_step1].
+apply allTransitions_spec' in H_step1.
+destruct H_step1 as [m1 [H_conf_init [H_succ_init H_forall_init]]]. 
+destruct H_step2 as [a2 H_step2].
+apply allTransitions_spec' in H_step2.
+destruct H_step2 as [m2 [H_conf_succ [H_succ_succ H_forall_succ]]].
+
+destruct s as [s_hd s_tl]. apply ev_t. destruct s_tl as [s_tl_hd s_tl_tl]. apply ev_t. apply ev_h.
+
+destruct H.
+{
+  rewrite <- H in H_forall_init. cbn in H_forall_init. destruct H_forall_init as [H_m1 | H_false].
+  {
+    rewrite <- H_succ_init in H_conf_succ. rewrite <- H in H_conf_succ. rewrite <- H_m1 in H_conf_succ. cbv in H_conf_succ.
+    repeat (try (destruct H_conf_succ as [H_false | H_conf_succ]; [exfalso ; now clear -H_false | ])). 
+    destruct H_conf_succ as [H_false | H_conf_succ]. 
+    {
+      unfold state2stream_formula.
+    simpl in H_succ_succ. simpl in H_forall_succ. simpl in H_succ_init. 
+    rewrite <- H_succ_init in H_forall_succ. rewrite <- H_m1 in H_forall_succ. rewrite <- H in H_forall_succ. cbv in H_forall_succ.
+    destruct H_forall_succ as [H_m2 | H_f].
+    {
+      rewrite <- H_m2 in H_succ_succ. rewrite <- H_succ_succ. rewrite <- H_succ_init. rewrite <- H_m1. rewrite <- H. now cbv.
+    }
+    now clear -H_f.
+    }
+    repeat (try (destruct H_conf_succ as [H_false | H_conf_succ]; [exfalso ; now clear -H_false | ])); exfalso ; now clear -H_conf_succ. 
+  }
+  exfalso ; now clear -H_false.
+}
+repeat (try(destruct H; [ 
+  rewrite <- H in H_forall_init; cbn in H_forall_init; destruct H_forall_init as [H_m1 | H_false]; [
+    rewrite <- H_succ_init in H_conf_succ; rewrite <- H in H_conf_succ; rewrite <- H_m1 in H_conf_succ; cbv in H_conf_succ;
+    repeat (try (destruct H_conf_succ as [H_false | H_conf_succ]; [exfalso ; now clear -H_false | ])); 
+    destruct H_conf_succ as [H_false | H_conf_succ]; [ 
+      unfold state2stream_formula; simpl in H_succ_succ; simpl in H_forall_succ; simpl in H_succ_init; 
+      rewrite <- H_succ_init in H_forall_succ; rewrite <- H_m1 in H_forall_succ; rewrite <- H in H_forall_succ; cbv in H_forall_succ;
+      destruct H_forall_succ as [H_m2 | H_f]; [
+        rewrite <- H_m2 in H_succ_succ; rewrite <- H_succ_succ; rewrite <- H_succ_init; rewrite <- H_m1; rewrite <- H; now cbv
+        | now clear -H_f ]
+      | repeat (try (destruct H_conf_succ as [H_false | H_conf_succ]; [exfalso ; now clear -H_false | ])); exfalso ; now clear -H_conf_succ ]
+  |exfalso ; now clear -H_false ] 
+  |])); now clear -H.
+Qed.
+
 Lemma strategyWins : correctStrategy 3 6 winningStrategy_k3_n6.
 Proof.
 unfold correctStrategy.
@@ -417,7 +725,15 @@ repeat (destruct H_nonL as [H_c_init | H_nonL]).
 - destruct s as [s_hd s_tl]. apply ev_t. destruct s_tl as [s_tl_hd s_tl_tl]. apply ev_t. apply ev_h. unfold state2stream_formula.
 eapply always_state_elim in H_trans.
 simpl in H_trans. destruct H_trans as [H_trans_hd H_trans_tl].
-eapply strategy_step in H_trans_tl. destruct H_trans_tl. simpl in H. destruct H_trans_hd. unfold allTransitionsLabeled in H. destruct H.
+eapply strategy_step in H_trans_tl. destruct H_trans_tl. simpl in H. destruct H_trans_hd. unfold allTransitionsLabeled in H.
+(*
+apply allTransitions_spec in H as [ms [H_cq [E_succ H_strat]]].
+rewrite <- E_succ.
+unfold allTransitionsLabeled in H0.
+apply allTransitions_spec in H0 as [ms' [H_cq' [E_succ' H_strat']]].
+subst s_tl_hd. unfold views in H_strat'. simpl in H_init. subst s_hd. subst init. simpl in H_strat'.
+*)
+destruct H.
 simpl in H.
 {
   eapply pair_equal_spec in H. destruct H. unfold allTransitionsLabeled in H0. destruct H0. simpl in H0.
