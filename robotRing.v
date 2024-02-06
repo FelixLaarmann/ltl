@@ -5,6 +5,9 @@ Require Import List.
 Require Import Program.
 Require Import Bool.
 Require Import Sorting.
+Require Import Arith.
+
+Require Import Lia.
 
 Global Open Scope Z_scope.
 
@@ -22,6 +25,10 @@ Section robotRing.
 (* k robots on a ring of n nodes *)
 Context (k n : nat).
 
+Context (enoughRobots : Nat.lt 2 k : Prop).
+
+Context (enoughNodes : Nat.le k n : Prop).
+
 Context (strategy : list Z -> option move).
 
 (* Configurations *)
@@ -32,7 +39,7 @@ Definition configurationSearchSpace :=
     map (map snd) (list_power (seq 0 k) (map (compose Z.pred Z.of_nat) (seq 0 (n+1)))).
 
 Definition isConfig (c : configuration) : bool := 
-    Nat.ltb 0 (length c) && Z.eqb (fold_right Z.add 0 c) (Z.of_nat (n - k)).
+    Nat.eqb k (length c) && Z.eqb (fold_right Z.add 0 c) (Z.of_nat (n - k)).
 
 Definition configurations : list(configuration) := 
     filter isConfig configurationSearchSpace.
@@ -59,7 +66,8 @@ Fixpoint configuration_min (l l' : configuration) : configuration :=
     | (x :: xs), (y :: ys) => if Z.eqb x y then (x :: configuration_min xs ys) else (if Z.ltb x y then l else l')
     end.
 
-Definition rep (c : configuration) : configuration := fold_right configuration_min (repeat (Z.of_nat n) k) (observational_equivalence_class c).
+Definition rep (c : configuration) : configuration := 
+  if (isConfig c) then fold_right configuration_min (repeat (Z.of_nat n) k) (observational_equivalence_class c) else c.
 
 Definition dec_configuration : forall x y : configuration, {x = y} + {x <> y}.
 Proof.
@@ -295,21 +303,29 @@ Proof.
 repeat decide equality.
 Defined.
 
+(* Look up the concrete definition in literature, this will do it for our cases at the moment 
+I looked it up:
+Gathering is impossible for periodic and edge-edge-symmetric configurations
+
+periodic means, that all robots have the same view and are disoriented.
+edge-edge-symmetric means, that if k and n are even, all robots have the same view
+*)
+
 
 Definition losingConfigs : list configuration :=
   filter
     (fun c => (negb (list_eqb c gatheredConfig)) && (
       let vs := nodup dec_listZ (views c) in
-      Nat.eqb (length vs) 1 && (let v := hd [] vs in (list_eqb v (rev v)) || ((Z.even (hd 1 v)) && (Z.even (last v 1)))) 
+      if Nat.eqb (length vs) 1 then let v := hd [] vs in (list_eqb v (rev v)) || (Nat.even k && Nat.even n) else false
       ))
     configuration_quotient.
 
 Definition nonLosingConfigs : list configuration :=
   filter
-    (fun c => (list_eqb c gatheredConfig) || (
-      let vs := nodup dec_listZ (views c) in
-      (Nat.eqb (length vs) 1) && (let v := hd [] vs in negb (list_eqb v (rev v)) || ((Z.even (hd 1 v)) && (Z.even (last v 1)))) 
-      ))
+  (fun c => (list_eqb c gatheredConfig) || (
+    let vs := nodup dec_listZ (views c) in
+    negb (Nat.eqb (length vs) 1) ||  let v := hd [] vs in (list_eqb v (rev v)) || (Nat.even k && Nat.even n))
+    )
     configuration_quotient.
 
 Lemma losing_dec : forall (c : configuration), In c configurations -> (In c losingConfigs) \/ (In c nonLosingConfigs).
@@ -340,34 +356,42 @@ apply in_remove in H_in_conf.
 destruct H_in_conf.
 Abort.
 
-(* Look up the concrete definition in literature, this will do it for our cases at the moment *)
-Lemma nonLosing_spec (c : configuration) : nonLosing' c -> In c configuration_quotient -> c = gatheredConfig \/
-  (length (nodup dec_listZ (views c)) = S 0) /\ 
-  ((hd [] (nodup dec_listZ (views c))) <> (rev (hd [] (nodup dec_listZ (views c)))) \/ 
-  Z.Even (hd 1 (hd [] (nodup dec_listZ (views c)))) /\ Z.Even (last (hd [] (nodup dec_listZ (views c))) 1)).
+
+(* Look up the concrete definition in literature, this will do it for our cases at the moment 
+I looked it up:
+Gathering is impossible for periodic and edge-edge-symmetric configurations
+
+periodic means, that all robots have the same view and are disoriented.
+edge-edge-symmetric means, that if k and n are even, all robots have the same view
+*)
+(*
+This should be the correct one...
+*)
+Lemma nonLosing_spec (c : configuration) : nonLosing' c -> In c configuration_quotient -> c = gatheredConfig \/ ((length (nodup dec_listZ (views c))) <> S 0) \/
+(hd [] (nodup dec_listZ (views c)) = rev (hd [] (nodup dec_listZ (views c)))) \/ (Nat.Even k /\ Nat.Even n).
 Proof.
 intros H_nonL H_cq.
 unfold nonLosing' in H_nonL.
 unfold nonLosingConfigs in H_nonL.
 apply filter_In in H_nonL.
 destruct H_nonL as [H H_spec]. clear H.
-apply orb_prop in H_spec. destruct H_spec.
-apply list_eqb_prop in H.
-- apply or_introl. easy.
-- apply or_intror. apply andb_prop in H. destruct H as [H1 H2]. split.
+apply orb_true_iff in H_spec.
+destruct H_spec as [H | H_spec].
 {
-  apply Nat.eqb_eq. easy.
+  apply or_introl. now apply list_eqb_prop in H.
 }
-apply orb_prop in H2. destruct H2.
+apply orb_true_iff in H_spec.
+destruct H_spec as [H_l | H_spec].
 {
-  apply or_introl. apply negb_true_iff in H. 
-  now apply not_list_eqb_prop in H.
+  apply or_intror. apply or_introl. intros H. apply Nat.eqb_eq in H. apply negb_true_iff in H_l. now rewrite H_l in H.
 }
-eapply andb_prop in H. destruct H as [H2 H3].
-apply or_intror. 
-apply Zeven_bool_iff in H2. apply Zeven_equiv in H2. 
-apply Zeven_bool_iff in H3. apply Zeven_equiv in H3.
-easy.
+apply orb_true_iff in H_spec.
+destruct H_spec as [H_r | H_e].
+{
+  apply or_intror. apply or_intror. apply or_introl. now apply list_eqb_prop in H_r.
+}
+apply or_intror.  apply or_intror. apply or_intror. apply andb_true_iff in H_e. 
+destruct H_e as [H_k H_n]. apply Nat.even_spec in H_k. apply Nat.even_spec in H_n. now split.
 Qed.
 
 Definition allTransitions : list (configuration * configuration) :=
@@ -482,6 +506,302 @@ Definition correctStrategy' := forall (s : stream configuration) (st : configura
   (((head_str s) = st) /\ always (state2stream_formula (fun p => step allTransitionsLabeled (fst p) (snd p))) (zip_stream s (tl_str s))) -> 
   ltl.eventually (state2stream_formula (fun c => c = gatheredConfig)) s.
 
+(* for odd k, only periodic configurations are losing  *)
+Definition isPeriodic (c : configuration) := Nat.Odd k -> exists (n : nat) (p : list Z), c = concat (repeat p n).
+
+Definition correctStrategyForOddNumberOfRobots := forall (s : stream configuration) (st : configuration), 
+  In st configuration_quotient ->
+  not (isPeriodic st) ->
+  (((head_str s) = st) /\ always (state2stream_formula (fun p => step allTransitionsLabeled (fst p) (snd p))) (zip_stream s (tl_str s))) -> 
+  ltl.eventually (state2stream_formula (fun c => c = gatheredConfig)) s.
+
+Definition wfTransitions : list (configuration * configuration) :=
+  flat_map 
+  (fun c => if list_eqb c gatheredConfig then [] else map (fun s => (c, s)) (map (successor c) (opponentChoices (map strategy (views c)))))
+  configuration_quotient.
+
+Check well_founded (step (fun (u : unit) l r => In (l,r) wfTransitions)).
+
+Lemma configuration_quotient_spec c : In c configuration_quotient -> exists c', rep c' = c /\ isConfig c' = true.
+Proof.
+intros H.
+unfold configuration_quotient in H.
+apply nodup_In in H.
+apply in_map_iff in H.
+destruct H as [x [E_rep H]].
+unfold configurations in H.
+apply filter_In in H. destruct H as [H E_conf].
+eexists x. split; easy.
+Qed.
+
+Lemma test_correct : well_founded (step (fun (u : unit) l r => In (l,r) wfTransitions)) -> correctStrategy'.
+Proof.
+unfold correctStrategy'.
+intros H_wf s init H_conf H_nonL H_run.
+destruct H_run as [H_init H_trans].
+apply nonLosing_spec in H_nonL; [| easy].
+destruct H_nonL as [H_i | H_s].
+{ 
+  apply ev_h. now transitivity init.
+}
+
+Admitted.
+
+
+
+
+
+
+Lemma fold_right_eq {A B : Type} (f : B -> A -> A) i : forall l1 l2, l1 = l2 -> fold_right f i l1 = fold_right f i l2.
+Proof.
+intros l1 l2 E.
+now rewrite E.
+Qed.
+
+Lemma seq_elim len : seq 0 (S len) = seq 0 len ++ [len].
+Proof.
+induction len.
+- now cbv.
+- simpl. assert (forall x y, (seq x (S y)) = (x :: seq (S x) y)).
+{
+  now intros x y.
+}
+rewrite <- H.
+rewrite <- seq_shift.
+rewrite IHlen. 
+rewrite map_app. 
+now rewrite seq_shift.
+Qed.
+
+Lemma map_seq_eq {A : Type} (f g : nat -> A) (x : nat) : (forall y, (0 <= y < x)%nat -> f y = g y) -> map f (seq 0 x) = map g (seq 0 x).
+induction x.
+- easy.
+- intros H. rewrite seq_elim. rewrite map_app. rewrite map_app. simpl. rewrite IHx.
+{
+  rewrite H.
+  {
+    easy.
+  }
+  lia.
+}
+intros y H_y.
+apply (H y). 
+lia.
+Qed.
+
+Lemma rotate_length : forall (c : configuration), isConfig c = true -> length (rotate c) = k.
+intros c H_c.
+destruct c.
+{
+  unfold isConfig in H_c. apply andb_true_iff in H_c. destruct H_c as [H_false H].
+  apply Nat.eqb_eq in H_false. cbv in H_false. unfold Nat.lt in enoughRobots. lia.
+}
+unfold rotate.
+unfold isConfig in H_c. apply andb_true_iff in H_c. destruct H_c as [H1 H2].
+apply Nat.eqb_eq in H1.
+rewrite H1. rewrite app_length. simpl. lia.
+Qed.
+
+Lemma iter_rotate_config : forall (c : configuration) (m : nat), isConfig c = true -> isConfig (Nat.iter m rotate c) = true.
+Proof.
+Admitted.
+
+Lemma iter_rotate_length : forall (c : configuration) (m : nat), isConfig c = true -> length (Nat.iter m rotate c) = k.
+Proof.
+intros c m H_c.
+destruct c.
+{
+  unfold isConfig in H_c. apply andb_true_iff in H_c. destruct H_c as [H_false H].
+  apply Nat.eqb_eq in H_false. cbv in H_false. unfold Nat.lt in enoughRobots. lia.
+}
+induction m.
+{
+  simpl.
+  unfold isConfig in H_c. apply andb_true_iff in H_c. destruct H_c as [H1 H2].
+  apply Nat.eqb_eq in H1. now simpl in H1.
+}
+rewrite Nat.iter_succ. rewrite rotate_length; [easy | ].
+now apply iter_rotate_config.
+Qed.
+
+Lemma rotate_elim : forall (c : configuration), isConfig c = true -> rotate c = (tl c) ++ [(hd (-2) c)].
+Proof.
+intros c H.
+destruct c.
+{
+  unfold isConfig in H. apply andb_true_iff in H. destruct H as [H_false H].
+  apply Nat.eqb_eq in H_false. cbv in H_false. unfold Nat.lt in enoughRobots. lia.
+}
+easy.
+Qed.
+
+Lemma rotate_eq : forall (c : configuration), isConfig c = true -> Nat.iter k rotate c = c.
+Proof.
+intros c H_c.
+destruct c.
+{
+  unfold isConfig in H_c. apply andb_true_iff in H_c. destruct H_c as [H_false H].
+  apply Nat.eqb_eq in H_false. cbv in H_false. unfold Nat.lt in enoughRobots. lia.
+}
+destruct k.
+{
+  lia.
+}
+Admitted.
+
+Lemma rotations_rotate : forall (c : configuration) (m : nat), isConfig c = true -> incl (rotations (Nat.iter m rotate c)) (rotations c).
+Proof.
+intros c m H_c.
+induction m.
+(*
+- unfold rotations. rewrite (rotate_length c 0 H_c).
+unfold isConfig in H_c. apply andb_true_iff in H_c. destruct H_c as [H1 H2].
+apply Nat.eqb_eq in H1. rewrite <- H1.
+unfold incl. intros a H_incl.
+now simpl in H_incl.
+- unfold incl. intros a H_incl.
+unfold incl in IHm. apply IHm. 
+
+unfold rotations in H_incl. 
+rewrite rotate_length in H_incl; [ | easy].
+unfold rotations. rewrite rotate_length; [ | easy].
+apply in_map_iff. apply in_map_iff in H_incl. destruct H_incl as [x [E_x H_x]].
+rewrite <- Nat.iter_add in E_x. rewrite <- E_x. 
+eexists (S x). split.
+{
+  rewrite <- E_x. rewrite <- Nat.iter_add. rewrite <- Nat.iter_add. rewrite  Nat.add_succ_l. rewrite Nat.add_succ_r. easy.
+}
+*)
+Admitted.
+
+
+Lemma obs_rep : forall (c1 c2 : configuration), isConfig c1 = true -> isConfig c2 = true -> In c1 (observational_equivalence_class c2) -> rep c1 = rep c2.
+Proof.
+intros c1 c2 H_c1 H_c2 H_obs.
+unfold rep.
+rewrite H_c1. rewrite H_c2.
+unfold observational_equivalence_class in H_obs.
+apply in_app_or in H_obs.
+destruct H_obs.
+{
+  unfold rotations in H. apply in_map_iff in H. destruct H as [x [E_x H_x]].
+  rewrite <- E_x.
+  apply fold_right_eq.
+  unfold observational_equivalence_class.
+  
+}
+
+Admitted.
+
+Lemma uniqueViews : forall (c1 c2 : configuration) v, isConfig c1 = true -> isConfig c2 = true -> In v (views c1) -> In v (views c2) ->
+  incl (observational_equivalence_class c1) (observational_equivalence_class c2).
+Proof.
+intros c1 c2 v H_c1 H_c2.
+induction v.
+- intros H_f1 H_f2.
+unfold views in H_f1. apply in_map_iff in H_f1. destruct H_f1 as [x [E_x H_x]].
+assert (forall (A : Type) (l : list A), (rev l) = [] -> l = []) as H_rev.
+{
+  intros A l.
+  induction l.
+  intros H.
+  {
+    easy.
+  }
+  intros H.
+  simpl in H. clear -H. apply app_eq_nil in H. now destruct H.
+}
+apply H_rev in E_x.
+admit.
+-
+
+
+
+Lemma uniqueViews : forall (c1 c2 : configuration) v, isConfig c1 = true -> isConfig c2 = true -> In v (views c1) -> In v (views c2) ->
+  incl (observational_equivalence_class c1) (observational_equivalence_class c2).
+Proof.
+intros c1 c2 v H_c1 H_c2 H_v1 H_v2.
+unfold views in H_v1. apply in_map_iff in H_v1. destruct H_v1 as [c_v1 [H_v_v1 H_c_v1]].
+unfold views in H_v2. apply in_map_iff in H_v2. destruct H_v2 as [c_v2 [H_v_v2 H_c_v2]].
+unfold rotations in H_c_v1. apply in_map_iff in H_c_v1. destruct H_c_v1 as [x [E_x H_x]]. 
+unfold rotations in H_c_v2. apply in_map_iff in H_c_v2. destruct H_c_v2 as [y [E_y H_y]]. 
+apply in_seq in H_x. apply in_seq in H_y.
+unfold incl.
+intros a H.
+
+apply obs_rep in H.
+- unfold observational_equivalence_class. apply in_or_app. apply or_introl.
+unfold rotations. apply in_map_iff. eexists y. split; [ | now apply in_seq].
+
+- admit.
+- easy.
+
+Lemma uniqueViews' : forall (c1 c2 : configuration) v, isConfig c1 = true -> isConfig c2 = true -> In v (views c1) -> In v (views c2) -> rep c1 = rep c2.
+Proof.
+intros c1 c2 v H_c1 H_c2 H_v1 H_v2.
+unfold views in H_v1. apply in_map_iff in H_v1. destruct H_v1 as [c_v1 [H_v_v1 H_c_v1]].
+unfold views in H_v2. apply in_map_iff in H_v2. destruct H_v2 as [c_v2 [H_v_v2 H_c_v2]].
+unfold rotations in H_c_v1. apply in_map_iff in H_c_v1. destruct H_c_v1 as [x [E_x H_x]]. 
+unfold rotations in H_c_v2. apply in_map_iff in H_c_v2. destruct H_c_v2 as [y [E_y H_y]]. 
+apply in_seq in H_x. apply in_seq in H_y.
+unfold rep. rewrite H_c1. rewrite H_c2.
+(* unfold observational_equivalence_class. *)
+eapply fold_right_eq.
+assert (rotations c1 = rotations c2).
+{
+  unfold rotations.
+  unfold isConfig in H_c1. apply andb_true_iff in H_c1. destruct H_c1 as [H_length_c1 H_sum_c1].
+  unfold isConfig in H_c2. apply andb_true_iff in H_c2. destruct H_c2 as [H_length_c2 H_sum_c2].
+  apply Nat.eqb_eq in H_length_c1. rewrite <- H_length_c1.
+  apply Nat.eqb_eq in H_length_c2. rewrite <- H_length_c2.
+  rewrite <- H_length_c1 in H_x.
+  rewrite <- H_length_c2 in H_y.
+  apply map_seq_eq.
+  intros z.
+  induction z.
+  {
+    intros H_z.
+    simpl.
+    admit.
+  }
+  admit.
+
+}
+now rewrite H.
+Admitted.
+
+Lemma uniqueViews : forall (c1 c2 : configuration) v, In c1 configuration_quotient -> In c2 configuration_quotient -> In v (views c1) -> In v (views c2) -> c1 = c2.
+Proof.
+intros c1 c2 v H_c1 H_c2 H_v1 H_v2.
+apply configuration_quotient_spec in H_c1. destruct H_c1 as [r1 [E_r1_c1 E_r1]].
+apply configuration_quotient_spec in H_c2. destruct H_c2 as [r2 [E_r2_c2 E_r2]].
+unfold views in H_v1. apply in_map_iff in H_v1. destruct H_v1 as [c_v1 [H_v_v1 H_c_v1]].
+unfold views in H_v2. apply in_map_iff in H_v2. destruct H_v2 as [c_v2 [H_v_v2 H_c_v2]].
+unfold rotations in H_c_v1. apply in_map_iff in H_c_v1. destruct H_c_v1 as [x [E_x H_x]].
+induction x.
+- simpl in E_x.
+
+Admitted.
+
+Lemma uniqueViews' : forall (c1 c2 : configuration), In c1 configuration_quotient -> In c2 configuration_quotient -> c1 <> c2 -> views c1 <> views c2.
+Proof.
+intros c1 c2 H_c1 H_c2 NE E.
+apply configuration_quotient_spec in H_c1.
+destruct H_c1 as [r1 [E_r1_c1 E_r1]].
+apply configuration_quotient_spec in H_c2.
+destruct H_c2 as [r2 [E_r2_c2 E_r2]].
+unfold views in E. 
+unfold rotations in E. 
+rewrite (map_map (fun x : nat => Nat.iter x rotate c1)) in E. rewrite (map_map (fun x : nat => Nat.iter x rotate c2)) in E.
+induction c1.
+-
+
+unfold isConfig in E_r1. apply andb_true_iff in E_r1. unfold rep in E_r1_c1.
+unfold rotate in E.
+rewrite <- E_r1_c1 in E.
+
+Admitted.
+
 End robotRing.
 
 Definition winningStrategy_k3_n6 (v : list Z) : option move := 
@@ -522,6 +842,8 @@ Definition winningStrategy_k3_n6 (v : list Z) : option move :=
       | _ => None
     end.
 
+Compute losingConfigs 4 10.
+Compute nodup dec_listZ (views [1;2;1;2]).
 
 Lemma elim_stream : forall {A : Set} (s : stream A), s = cons_str (head_str s) (tl_str s).
 Proof.
@@ -573,6 +895,184 @@ Qed.
 
 Compute allTransitions 3 6 winningStrategy_k3_n6.
 
+Lemma strategyWinsOddRobots : correctStrategyForOddNumberOfRobots 3 6 winningStrategy_k3_n6.
+Proof.
+unfold correctStrategyForOddNumberOfRobots.
+intros s init H_conf H_nonL H_run.
+destruct H_run as [H_init H_trans].
+unfold isPeriodic in H_nonL.
+cbv in H_conf.
+repeat (destruct H_conf as [H | H_conf]; [
+  match goal with 
+    | H : ([1; 1; 1] = init) |- _ => 
+        rewrite <- H in H_nonL; assert (Nat.Odd 3 -> exists (n : nat) (p : list Z), [1; 1; 1] = concat (repeat p n)) as H_periodic; [ intros H_odd; eexists 3%nat; now eexists [1] | now apply H_nonL in H_periodic]
+    | H : ([0; 1; 2] = init) |- _ => 
+        eapply always_state_elim in H_trans; destruct H_trans as [H_step1 H_always];
+        rewrite zip_stream_eq_head in H_step1; simpl in H_step1;
+        eapply always_state_elim in H_always; destruct H_always as [H_step2 H_always];
+        rewrite zip_stream_eq_tail in H_step2; rewrite zip_stream_eq_head in H_step2; simpl in H_step2;
+        rewrite H_init in H_step1;
+        destruct H_step1 as [a1 H_step1];
+        apply allTransitions_spec' in H_step1;
+        destruct H_step1 as [m1 [H_conf_init [H_succ_init H_forall_init]]]; 
+        destruct H_step2 as [a2 H_step2];
+        apply allTransitions_spec' in H_step2;
+        destruct H_step2 as [m2 [H_conf_succ [H_succ_succ H_forall_succ]]];
+  
+        destruct s as [s_hd s_tl]; apply ev_t; destruct s_tl as [s_tl_hd s_tl_tl]; apply ev_t; apply ev_h;
+  
+        rewrite <- H in H_forall_init; cbn in H_forall_init; destruct H_forall_init as [H_m1 | H_false]; [
+          rewrite <- H_succ_init in H_conf_succ; rewrite <- H in H_conf_succ; rewrite <- H_m1 in H_conf_succ; cbv in H_conf_succ;
+          repeat (try (destruct H_conf_succ as [H_false | H_conf_succ]; [exfalso ; now clear -H_false | ])); 
+          destruct H_conf_succ as [H_false | H_conf_succ]; [ 
+            unfold state2stream_formula; simpl in H_succ_succ; simpl in H_forall_succ; simpl in H_succ_init; 
+            rewrite <- H_succ_init in H_forall_succ; rewrite <- H_m1 in H_forall_succ; rewrite <- H in H_forall_succ; cbv in H_forall_succ;
+            destruct H_forall_succ as [H_m2 | H_f]; [
+              rewrite <- H_m2 in H_succ_succ; rewrite <- H_succ_succ; rewrite <- H_succ_init; rewrite <- H_m1; rewrite <- H; now cbv
+          |     now clear -H_f ]
+        |     repeat (try (destruct H_conf_succ as [H_false | H_conf_succ]; [exfalso ; now clear -H_false | ])); exfalso ; now clear -H_conf_succ ]
+        |exfalso ; now clear -H_false ]
+    | H : ([-1; 2; 2] = init) |- _ => 
+        eapply always_state_elim in H_trans; destruct H_trans as [H_step1 H_always];
+        rewrite zip_stream_eq_head in H_step1; simpl in H_step1;
+        eapply always_state_elim in H_always; destruct H_always as [H_step2 H_always];
+        rewrite zip_stream_eq_tail in H_step2; rewrite zip_stream_eq_head in H_step2; simpl in H_step2;
+        rewrite H_init in H_step1;
+        destruct H_step1 as [a1 H_step1];
+        apply allTransitions_spec' in H_step1;
+        destruct H_step1 as [m1 [H_conf_init [H_succ_init H_forall_init]]]; 
+        destruct H_step2 as [a2 H_step2];
+        apply allTransitions_spec' in H_step2;
+        destruct H_step2 as [m2 [H_conf_succ [H_succ_succ H_forall_succ]]];
+  
+        destruct s as [s_hd s_tl]; apply ev_t; destruct s_tl as [s_tl_hd s_tl_tl]; apply ev_t; apply ev_h;
+  
+        rewrite <- H in H_forall_init; cbn in H_forall_init; destruct H_forall_init as [H_m1 | H_false]; [
+          rewrite <- H_succ_init in H_conf_succ; rewrite <- H in H_conf_succ; rewrite <- H_m1 in H_conf_succ; cbv in H_conf_succ;
+          repeat (try (destruct H_conf_succ as [H_false | H_conf_succ]; [exfalso ; now clear -H_false | ])); 
+          destruct H_conf_succ as [H_false | H_conf_succ]; [ 
+            unfold state2stream_formula; simpl in H_succ_succ; simpl in H_forall_succ; simpl in H_succ_init; 
+            rewrite <- H_succ_init in H_forall_succ; rewrite <- H_m1 in H_forall_succ; rewrite <- H in H_forall_succ; cbv in H_forall_succ;
+            destruct H_forall_succ as [H_m2 | H_f]; [
+              rewrite <- H_m2 in H_succ_succ; rewrite <- H_succ_succ; rewrite <- H_succ_init; rewrite <- H_m1; rewrite <- H; now cbv
+          |     now clear -H_f ]
+        |     repeat (try (destruct H_conf_succ as [H_false | H_conf_succ]; [exfalso ; now clear -H_false | ])); exfalso ; now clear -H_conf_succ ]
+        |exfalso ; now clear -H_false ]
+    | H : ([0; 0; 3] = init) |- _ =>
+        eapply always_state_elim in H_trans; destruct H_trans as [H_step1 H_always];
+        rewrite zip_stream_eq_head in H_step1; simpl in H_step1;
+        rewrite H_init in H_step1;
+        destruct H_step1 as [a1 H_step1];
+        apply allTransitions_spec' in H_step1;
+        destruct H_step1 as [m1 [H_conf_init [H_succ_init H_forall_init]]]; 
+  
+        destruct s as [s_hd s_tl]; apply ev_t; apply ev_h;
+
+        rewrite <- H in H_forall_init; cbn in H_forall_init; destruct H_forall_init as [H_m1 | H_false]; [ 
+          rewrite <- H in H_succ_init; rewrite <- H_m1 in H_succ_init; simpl in H_succ_init; 
+          unfold state2stream_formula; rewrite <- H_succ_init; now cbv
+          | now clear -H_false]
+    | H : ([-1; 1; 3] = init) |- _ =>
+        eapply always_state_elim in H_trans; destruct H_trans as [H_step1 H_always];
+        rewrite zip_stream_eq_head in H_step1; simpl in H_step1;
+        rewrite H_init in H_step1;
+        destruct H_step1 as [a1 H_step1];
+        apply allTransitions_spec' in H_step1;
+        destruct H_step1 as [m1 [H_conf_init [H_succ_init H_forall_init]]]; 
+  
+        destruct s as [s_hd s_tl]; apply ev_t; apply ev_h;
+        
+        rewrite <- H in H_forall_init; cbn in H_forall_init; destruct H_forall_init as [H_m1 | H_false]; [ 
+          rewrite <- H in H_succ_init; rewrite <- H_m1 in H_succ_init; simpl in H_succ_init; 
+          unfold state2stream_formula; rewrite <- H_succ_init; now cbv
+          | now clear -H_false]
+    | H : ([-1; 0; 4] = init) |- _ =>
+        eapply always_state_elim in H_trans; destruct H_trans as [H_step1 H_always];
+        rewrite zip_stream_eq_head in H_step1; simpl in H_step1;
+        rewrite H_init in H_step1;
+        destruct H_step1 as [a1 H_step1];
+        apply allTransitions_spec' in H_step1;
+        destruct H_step1 as [m1 [H_conf_init [H_succ_init H_forall_init]]]; 
+  
+        destruct s as [s_hd s_tl]; apply ev_t; apply ev_h;
+
+        rewrite <- H in H_forall_init; cbn in H_forall_init; destruct H_forall_init as [H_m1 | H_false]; [ 
+          rewrite <- H in H_succ_init; rewrite <- H_m1 in H_succ_init; simpl in H_succ_init; 
+          unfold state2stream_formula; rewrite <- H_succ_init; now cbv
+          | now clear -H_false]
+    | H : ([-1; -1; 5] = init) |- _ => apply ev_h; now transitivity init
+  end
+|]); now clear -H_conf.
+Qed.
+
+
+Lemma strategyWinsOddRobots' : correctStrategyForOddNumberOfRobots 3 6 winningStrategy_k3_n6.
+Proof.
+unfold correctStrategyForOddNumberOfRobots.
+intros s init H_conf H_nonL H_run.
+destruct H_run as [H_init H_trans].
+unfold isPeriodic in H_nonL.
+destruct H_conf as [H_l | H].
+{
+  cbv in H_l. rewrite <- H_l in H_nonL. assert (Nat.Odd 3 -> exists (n : nat) (p : list Z), [1; 1; 1] = concat (repeat p n)).
+  {
+    intros H_odd. eexists 3%nat. now eexists [1].
+  } 
+  now apply H_nonL in H.
+}
+simpl in H.
+eapply always_state_elim in H_trans. destruct H_trans as [H_step1 H_always].
+rewrite zip_stream_eq_head in H_step1. simpl in H_step1. 
+eapply always_state_elim in H_always. destruct H_always as [H_step2 H_always].
+rewrite zip_stream_eq_tail in H_step2. rewrite zip_stream_eq_head in H_step2. simpl in H_step2.
+rewrite H_init in H_step1.
+destruct H_step1 as [a1 H_step1].
+apply allTransitions_spec' in H_step1.
+destruct H_step1 as [m1 [H_conf_init [H_succ_init H_forall_init]]]. 
+destruct H_step2 as [a2 H_step2].
+apply allTransitions_spec' in H_step2.
+destruct H_step2 as [m2 [H_conf_succ [H_succ_succ H_forall_succ]]].
+
+destruct s as [s_hd s_tl]. apply ev_t. destruct s_tl as [s_tl_hd s_tl_tl]. apply ev_t. apply ev_h.
+
+destruct H.
+{
+  rewrite <- H in H_forall_init. cbn in H_forall_init. destruct H_forall_init as [H_m1 | H_false].
+  {
+    rewrite <- H_succ_init in H_conf_succ. rewrite <- H in H_conf_succ. rewrite <- H_m1 in H_conf_succ. cbv in H_conf_succ.
+    repeat (try (destruct H_conf_succ as [H_false | H_conf_succ]; [exfalso ; now clear -H_false | ])). 
+    destruct H_conf_succ as [H_false | H_conf_succ]. 
+    {
+      unfold state2stream_formula.
+    simpl in H_succ_succ. simpl in H_forall_succ. simpl in H_succ_init. 
+    rewrite <- H_succ_init in H_forall_succ. rewrite <- H_m1 in H_forall_succ. rewrite <- H in H_forall_succ. cbv in H_forall_succ.
+    destruct H_forall_succ as [H_m2 | H_f].
+    {
+      rewrite <- H_m2 in H_succ_succ. rewrite <- H_succ_succ. rewrite <- H_succ_init. rewrite <- H_m1. rewrite <- H. now cbv.
+    }
+    now clear -H_f.
+    }
+    repeat (try (destruct H_conf_succ as [H_false | H_conf_succ]; [exfalso ; now clear -H_false | ])); exfalso ; now clear -H_conf_succ. 
+  }
+  exfalso ; now clear -H_false.
+}
+repeat (try(destruct H; [ 
+  rewrite <- H in H_forall_init; cbn in H_forall_init; destruct H_forall_init as [H_m1 | H_false]; [
+    rewrite <- H_succ_init in H_conf_succ; rewrite <- H in H_conf_succ; rewrite <- H_m1 in H_conf_succ; cbv in H_conf_succ;
+    repeat (try (destruct H_conf_succ as [H_false | H_conf_succ]; [exfalso ; now clear -H_false | ])); 
+    destruct H_conf_succ as [H_false | H_conf_succ]; [ 
+      unfold state2stream_formula; simpl in H_succ_succ; simpl in H_forall_succ; simpl in H_succ_init; 
+      rewrite <- H_succ_init in H_forall_succ; rewrite <- H_m1 in H_forall_succ; rewrite <- H in H_forall_succ; cbv in H_forall_succ;
+      destruct H_forall_succ as [H_m2 | H_f]; [
+        rewrite <- H_m2 in H_succ_succ; rewrite <- H_succ_succ; rewrite <- H_succ_init; rewrite <- H_m1; rewrite <- H; now cbv
+        | now clear -H_f ]
+      | repeat (try (destruct H_conf_succ as [H_false | H_conf_succ]; [exfalso ; now clear -H_false | ])); exfalso ; now clear -H_conf_succ ]
+  |exfalso ; now clear -H_false ] 
+  |])); now clear -H.
+Qed.
+
+
+
 
 Lemma strategyWins' : correctStrategy' 3 6 winningStrategy_k3_n6.
 Proof.
@@ -584,14 +1084,33 @@ destruct H_nonL as [H_i | H_s].
 { 
   apply ev_h. now transitivity init.
 }
-destruct H_s as [H_lv H_s].
-destruct H_conf as [H_l | H].
-{ 
-  cbn in H_l. destruct H_s.
+(*
+destruct H_s as [H_lv | H_s].
+{
+  destruct H_conf as [H_l | H].
+  {
+    cbn in H_l. destruct H_lv as [H_lv  H_s]. destruct H_s.
   {
     rewrite <- H_l in H. cbn in H. now clear -H.
   }
-  rewrite <- H_l in H. cbn in H. destruct H as [H1 H2]. clear -H1. now apply Zeven_equiv in H1. 
+  rewrite <- H_l in H. cbn in H. destruct H as [H1 H2]. clear -H1. now apply Zeven_equiv in H1.
+  }
+  simpl in H.
+  destruct H_lv as [H_false H_l].
+  repeat (try (destruct H; [ rewrite <- H in H_false; clear -H_false; now cbv in H_false|])).
+  destruct H as [H_g | H_f].
+  {
+    apply ev_h.  now transitivity init.
+  }
+  now clear -H_f.
+}
+*)
+destruct H_conf as [H_l | H].
+{
+  cbn in H_l. rewrite <- H_l in H_s. clear -H_s. destruct H_s. destruct H0.
+  {
+    cbv in H. cbv in H0.
+  }
 }
 simpl in H.
 eapply always_state_elim in H_trans. destruct H_trans as [H_step1 H_always].
@@ -654,14 +1173,30 @@ destruct H_nonL as [H_i | H_s].
 { 
   apply ev_h. now transitivity init.
 }
-destruct H_s as [H_lv H_s].
-destruct H_conf as [H_l | H].
-{ 
-  cbn in H_l. destruct H_s.
+(*
+destruct H_s as [H_lv | H_s].
+{
+  destruct H_conf as [H_l | H].
+  {
+    cbn in H_l. destruct H_lv as [H_lv  H_s]. destruct H_s.
   {
     rewrite <- H_l in H. cbn in H. now clear -H.
   }
-  rewrite <- H_l in H. cbn in H. destruct H as [H1 H2]. clear -H1. now apply Zeven_equiv in H1. 
+  rewrite <- H_l in H. cbn in H. destruct H as [H1 H2]. clear -H1. now apply Zeven_equiv in H1.
+  }
+  simpl in H.
+  destruct H_lv as [H_false H_l].
+  repeat (try (destruct H; [ rewrite <- H in H_false; clear -H_false; now cbv in H_false|])).
+  destruct H as [H_g | H_f].
+  {
+    apply ev_h.  now transitivity init.
+  }
+  now clear -H_f.
+}
+*)
+destruct H_conf as [H_l | H].
+{
+  cbn in H_l. rewrite <- H_l in H_s. clear -H_s. now cbv in H_s.
 }
 simpl in H.
 eapply always_state_elim in H_trans. destruct H_trans as [H_step1 H_always].
@@ -714,574 +1249,5 @@ repeat (try(destruct H; [
   |])); now clear -H.
 Qed.
 
-Lemma strategyWins : correctStrategy 3 6 winningStrategy_k3_n6.
-Proof.
-unfold correctStrategy.
-intros s init H_nonL H_run.
-destruct H_run as [H_init H_trans].
-unfold nonLosing in H_nonL. 
-simpl in H_nonL.
-repeat (destruct H_nonL as [H_c_init | H_nonL]).
-- destruct s as [s_hd s_tl]. apply ev_t. destruct s_tl as [s_tl_hd s_tl_tl]. apply ev_t. apply ev_h. unfold state2stream_formula.
-eapply always_state_elim in H_trans.
-simpl in H_trans. destruct H_trans as [H_trans_hd H_trans_tl].
-eapply strategy_step in H_trans_tl. destruct H_trans_tl. simpl in H. destruct H_trans_hd. unfold allTransitionsLabeled in H.
-(*
-apply allTransitions_spec in H as [ms [H_cq [E_succ H_strat]]].
-rewrite <- E_succ.
-unfold allTransitionsLabeled in H0.
-apply allTransitions_spec in H0 as [ms' [H_cq' [E_succ' H_strat']]].
-subst s_tl_hd. unfold views in H_strat'. simpl in H_init. subst s_hd. subst init. simpl in H_strat'.
-*)
-destruct H.
-simpl in H.
-{
-  eapply pair_equal_spec in H. destruct H. unfold allTransitionsLabeled in H0. destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. simpl in H_init. rewrite H_init in H0. rewrite <- H_c_init in H0. clear -H0. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }  
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0.
-}
-destruct H. simpl in H.
-{
-  eapply pair_equal_spec in H. destruct H. unfold allTransitionsLabeled in H0. destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0.
-}
-destruct H. simpl in H.
-{
-  eapply pair_equal_spec in H. destruct H. unfold allTransitionsLabeled in H0. destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0.
-}
-destruct H. simpl in H.
-{
-  eapply pair_equal_spec in H. destruct H. unfold allTransitionsLabeled in H0. destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. rewrite <- H1. unfold gatheredConfig. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0.
-}
-destruct H. simpl in H.
-{
-  eapply pair_equal_spec in H. destruct H. unfold allTransitionsLabeled in H0. destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. rewrite <- H1. unfold gatheredConfig. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0.
-}
-destruct H. simpl in H.
-{
-  eapply pair_equal_spec in H. destruct H. unfold allTransitionsLabeled in H0. destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. rewrite <- H1. unfold gatheredConfig. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0.
-}
-destruct H. simpl in H.
-{
-  eapply pair_equal_spec in H. destruct H. unfold allTransitionsLabeled in H0. destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. rewrite <- H1. unfold gatheredConfig. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. rewrite <- H1. unfold gatheredConfig. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. rewrite <- H1. unfold gatheredConfig. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. rewrite <- H1. unfold gatheredConfig. easy.
-  }
-  destruct H0.
-}
-destruct H.
-- destruct s as [s_hd s_tl]. apply ev_t. destruct s_tl as [s_tl_hd s_tl_tl]. apply ev_t. apply ev_h. unfold state2stream_formula.
-eapply always_state_elim in H_trans.
-simpl in H_trans. destruct H_trans as [H_trans_hd H_trans_tl].
-eapply strategy_step in H_trans_tl. destruct H_trans_tl. simpl in H. destruct H_trans_hd. unfold allTransitionsLabeled in H. destruct H.
-simpl in H.
-{
-  eapply pair_equal_spec in H. destruct H. unfold allTransitionsLabeled in H0. destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. simpl in H_init. rewrite H_init in H0. rewrite <- H_c_init in H0. clear -H0. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }  
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0.
-}
-destruct H. simpl in H.
-{
-  eapply pair_equal_spec in H. destruct H. unfold allTransitionsLabeled in H0. destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0.
-}
-destruct H. simpl in H.
-{
-  eapply pair_equal_spec in H. destruct H. unfold allTransitionsLabeled in H0. destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0.
-}
-destruct H. simpl in H.
-{
-  eapply pair_equal_spec in H. destruct H. unfold allTransitionsLabeled in H0. destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. rewrite <- H1. unfold gatheredConfig. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0.
-}
-destruct H. simpl in H.
-{
-  eapply pair_equal_spec in H. destruct H. unfold allTransitionsLabeled in H0. destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. rewrite <- H1. unfold gatheredConfig. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0.
-}
-destruct H. simpl in H.
-{
-  eapply pair_equal_spec in H. destruct H. unfold allTransitionsLabeled in H0. destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. rewrite <- H1. unfold gatheredConfig. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0.
-}
-destruct H. simpl in H.
-{
-  eapply pair_equal_spec in H. destruct H. unfold allTransitionsLabeled in H0. destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. unfold rep in H2. simpl in H2. unfold successor in H2. simpl in H2. rewrite <- H2 in H. clear -H. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. rewrite <- H1. unfold gatheredConfig. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. rewrite <- H1. unfold gatheredConfig. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. rewrite <- H1. unfold gatheredConfig. easy.
-  }
-  destruct H0. simpl in H0.
-  {
-    eapply pair_equal_spec in H0. destruct H0. rewrite <- H1. unfold gatheredConfig. easy.
-  }
-  destruct H0.
-}
-destruct H.
-- destruct s as [s_hd s_tl]. apply ev_t. apply ev_h. unfold state2stream_formula.
-eapply strategy_step in H_trans. rewrite H_init in H_trans. destruct H_trans. simpl in H. unfold allTransitionsLabeled in H. destruct H. 
-{
-  simpl in H. eapply pair_equal_spec in H. destruct H. rewrite <- H_c_init in H. exfalso. clear -H. easy.
-}
-simpl in H. destruct H.
-{
-  eapply pair_equal_spec in H. destruct H. rewrite <- H_c_init in H. exfalso. clear -H. easy.
-}
-destruct H.
-{
-  eapply pair_equal_spec in H. destruct H. rewrite <- H_c_init in H. exfalso. clear -H. easy.
-}
-destruct H.
-{
-  eapply pair_equal_spec in H. destruct H. rewrite <- H0. easy.
-}
-destruct H.
-{
-  eapply pair_equal_spec in H. destruct H. rewrite <- H_c_init in H. exfalso. clear -H. easy.
-}
-destruct H.
-{
-  eapply pair_equal_spec in H. destruct H. rewrite <- H_c_init in H. exfalso. clear -H. easy.
-}
-destruct H.
-{
-  eapply pair_equal_spec in H. destruct H. rewrite <- H_c_init in H. exfalso. clear -H. easy.
-}
-easy.
-- destruct s as [s_hd s_tl]. apply ev_t. apply ev_h. unfold state2stream_formula.
-eapply strategy_step in H_trans. rewrite H_init in H_trans. destruct H_trans. simpl in H. unfold allTransitionsLabeled in H. destruct H. 
-{
-  simpl in H. eapply pair_equal_spec in H. destruct H. rewrite <- H_c_init in H. exfalso. clear -H. easy.
-}
-simpl in H. destruct H.
-{
-  eapply pair_equal_spec in H. destruct H. rewrite <- H_c_init in H. exfalso. clear -H. easy.
-}
-destruct H.
-{
-  eapply pair_equal_spec in H. destruct H. rewrite <- H_c_init in H. exfalso. clear -H. easy.
-}
-destruct H.
-{
-  eapply pair_equal_spec in H. destruct H. rewrite <- H_c_init in H. exfalso. clear -H. easy.
-}
-destruct H.
-{
-  eapply pair_equal_spec in H. destruct H. rewrite <- H0. easy.
-}
-destruct H.
-{
-  eapply pair_equal_spec in H. destruct H. rewrite <- H_c_init in H. exfalso. clear -H. easy.
-}
-destruct H.
-{
-  eapply pair_equal_spec in H. destruct H. rewrite <- H_c_init in H. exfalso. clear -H. easy.
-}
-easy.
-- destruct s as [s_hd s_tl]. apply ev_t. apply ev_h. unfold state2stream_formula.
-eapply strategy_step in H_trans. rewrite H_init in H_trans. destruct H_trans. simpl in H. unfold allTransitionsLabeled in H. destruct H. 
-{
-  simpl in H. eapply pair_equal_spec in H. destruct H. rewrite <- H_c_init in H. exfalso. clear -H. easy.
-}
-simpl in H. destruct H.
-{
-  eapply pair_equal_spec in H. destruct H. rewrite <- H_c_init in H. exfalso. clear -H. easy.
-}
-destruct H.
-{
-  eapply pair_equal_spec in H. destruct H. rewrite <- H_c_init in H. exfalso. clear -H. easy.
-}
-destruct H.
-{
-  eapply pair_equal_spec in H. destruct H. rewrite <- H_c_init in H. exfalso. clear -H. easy.
-}
-destruct H.
-{
-  eapply pair_equal_spec in H. destruct H. rewrite <- H_c_init in H. exfalso. clear -H. easy.
-}
-destruct H.
-{
-  eapply pair_equal_spec in H. destruct H. rewrite <- H0. easy.
-}
-destruct H.
-{
-  eapply pair_equal_spec in H. destruct H. rewrite <- H_c_init in H. exfalso. clear -H. easy.
-}
-easy.
-- apply ev_h. 
-symmetry in H_c_init.
-transitivity init; assumption.
-- easy.
-Qed.
 
 
