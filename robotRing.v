@@ -6,7 +6,9 @@ Require Import Program.
 Require Import Bool.
 Require Import Sorting.
 Require Import Arith.
+Require Import Coq.Arith.Wf_nat.
 
+Require Import Permutation.
 Require Import Lia.
 
 Global Open Scope Z_scope.
@@ -507,13 +509,30 @@ Definition correctStrategy' := forall (s : stream configuration) (st : configura
   ltl.eventually (state2stream_formula (fun c => c = gatheredConfig)) s.
 
 (* for odd k, only periodic configurations are losing  *)
-Definition isPeriodic (c : configuration) := Nat.Odd k -> exists (n : nat) (p : list Z), c = concat (repeat p n).
+Definition isPeriodic (c : configuration) := Nat.Odd k -> exists (n : nat) (p : list Z), c = concat (repeat p (n+2)%nat).
 
 Definition correctStrategyForOddNumberOfRobots := forall (s : stream configuration) (st : configuration), 
   In st configuration_quotient ->
   not (isPeriodic st) ->
   (((head_str s) = st) /\ always (state2stream_formula (fun p => step allTransitionsLabeled (fst p) (snd p))) (zip_stream s (tl_str s))) -> 
   ltl.eventually (state2stream_formula (fun c => c = gatheredConfig)) s.
+
+Definition forOddRobotsPeriodicIsLosing := forall (s : stream configuration) (st : configuration), 
+  In st configuration_quotient ->
+  (isPeriodic st /\ not (st = gatheredConfig)) ->
+  (((head_str s) = st) /\ always (state2stream_formula (fun p => step allTransitionsLabeled (fst p) (snd p))) (zip_stream s (tl_str s))) -> 
+  ltl.always (state2stream_formula (fun c => isPeriodic c)) s.
+
+(*
+In LTL it should hold, that
+not (eventually P) = alway(not P)
+*)
+
+Definition forOddRobotsPeriodicIsLosing' := forall (st : configuration), 
+  In st configuration_quotient -> 
+  (isPeriodic st /\ not (st = gatheredConfig)) -> not (forall (s : stream configuration),
+  (((head_str s) = st) /\ always (state2stream_formula (fun p => step allTransitionsLabeled (fst p) (snd p))) (zip_stream s (tl_str s))) -> 
+  ltl.eventually (state2stream_formula (fun c => c = gatheredConfig)) s).
 
 Definition wfTransitions : list (configuration * configuration) :=
   flat_map 
@@ -590,6 +609,7 @@ lia.
 Qed.
 
 Lemma rotate_length : forall (c : configuration), isConfig c = true -> length (rotate c) = k.
+Proof.
 intros c H_c.
 destruct c.
 {
@@ -602,9 +622,58 @@ apply Nat.eqb_eq in H1.
 rewrite H1. rewrite app_length. simpl. lia.
 Qed.
 
+Lemma fold_right_cons_elim {A B : Type} (f : B -> A -> A) (a : A) (b : B) (l : list B): fold_right f a (b :: l) = f b (fold_right f a l).
+Proof.
+now cbn.
+Qed.
+
+Lemma fold_right_nil_elim {A B : Type} (f : B -> A -> A) (a : A) : fold_right f a [] = a.
+Proof.
+now cbn.
+Qed.
+
+Lemma sum_app_elim z c : fold_right Z.add 0 (c ++ [z]) = (fold_right Z.add 0 c) + z.
+Proof.
+induction c.
+- cbn. lia.
+- rewrite <- app_comm_cons. rewrite fold_right_cons_elim. rewrite fold_right_cons_elim. rewrite IHc. apply Z.add_assoc.
+Qed.
+
+Lemma rotate_sum : forall (c : configuration), isConfig c = true -> fold_right Z.add 0 (rotate c) = Z.of_nat (n - k).
+Proof.
+intros c H_c.
+destruct c.
+{
+  unfold isConfig in H_c. apply andb_true_iff in H_c. destruct H_c as [H_false H].
+  apply Nat.eqb_eq in H_false. cbv in H_false. unfold Nat.lt in enoughRobots. lia.
+}
+unfold rotate.
+unfold isConfig in H_c. apply andb_true_iff in H_c. destruct H_c as [H1 H2].
+apply Z.eqb_eq in H2.
+rewrite <- H2.
+rewrite sum_app_elim.
+rewrite fold_right_cons_elim. lia.
+Qed.
+
 Lemma iter_rotate_config : forall (c : configuration) (m : nat), isConfig c = true -> isConfig (Nat.iter m rotate c) = true.
 Proof.
-Admitted.
+intros c m. revert c.
+induction m.
+- intros. easy.
+- intros c H_c. simpl.
+unfold isConfig.
+apply andb_true_iff.
+split.
+{
+  apply Nat.eqb_eq.
+  symmetry.
+  apply rotate_length.
+  apply IHm; easy.
+}
+apply Z.eqb_eq.
+apply rotate_sum.
+apply IHm; easy.
+Qed.
 
 Lemma iter_rotate_length : forall (c : configuration) (m : nat), isConfig c = true -> length (Nat.iter m rotate c) = k.
 Proof.
@@ -635,18 +704,115 @@ destruct c.
 easy.
 Qed.
 
-Lemma rotate_eq : forall (c : configuration), isConfig c = true -> Nat.iter k rotate c = c.
+Lemma rotate_elim_skipn_firstn : forall (c : configuration), isConfig c = true -> rotate c = (skipn 1%nat c) ++ firstn 1%nat c.
 Proof.
-intros c H_c.
+intros c H.
+destruct c.
+{
+  unfold isConfig in H. apply andb_true_iff in H. destruct H as [H_false H].
+  apply Nat.eqb_eq in H_false. cbv in H_false. unfold Nat.lt in enoughRobots. lia.
+}
+easy.
+Qed.
+
+Lemma list_eq_elim {A : Type} (a a' : A) (l l' : list A) : a :: l = a' :: l' -> a = a' /\ l = l'.
+Proof.
+now intros [=E1 E2].
+Qed.
+
+Lemma firstn_skipn_succ {A : Type} (l : list A) (m : nat) : firstn m l ++ (skipn m (firstn (S m) l)) = firstn (S m) l.
+Proof.
+revert m.
+induction l.
+{
+  intros m. simpl. rewrite firstn_nil. now rewrite skipn_nil.
+}
+intros m.
+destruct m.
+{
+  easy.
+}
+rewrite firstn_cons. rewrite firstn_cons. rewrite skipn_cons.
+rewrite <- app_comm_cons.
+f_equal. 
+now apply IHl.
+Qed.
+
+
+Compute Nat.iter 2 rotate [1;2;3;4].
+Compute (skipn 2 [1;2;3;4]) ++ (firstn 2 [1;2;3;4]).
+
+Lemma rotate_nat_elim : forall (c : configuration) (m : nat), isConfig c = true -> (m <= k)%nat -> Nat.iter m rotate c = (skipn m c) ++ (firstn m c).
+Proof.
+intros c m H_c H_m.
+revert H_c. revert c.
+induction m.
+- intros. simpl. now rewrite app_nil_r.
+- intros c H_c.
 destruct c.
 {
   unfold isConfig in H_c. apply andb_true_iff in H_c. destruct H_c as [H_false H].
   apply Nat.eqb_eq in H_false. cbv in H_false. unfold Nat.lt in enoughRobots. lia.
 }
-destruct k.
+rewrite Nat.iter_succ.
+rewrite rotate_elim_skipn_firstn.
 {
-  lia.
+  rewrite IHm; [| lia | easy].
+  rewrite skipn_app.
+  unfold isConfig in H_c. apply andb_true_iff in H_c. destruct H_c as [H_length H_sum]. apply Nat.eqb_eq in H_length.
+  rewrite skipn_length.
+  rewrite skipn_skipn.
+  rewrite <- app_assoc.
+  assert (skipn (1 - (length (z :: c) - m)) (firstn m (z :: c)) ++ firstn 1 (skipn m (z :: c) ++ firstn m (z :: c)) = firstn (S m) (z :: c)).
+  {
+    rewrite <- H_length.
+    assert ((1 - (k - m) = 0)%nat \/ (1 - (k - m) = 1)%nat).
+    {
+      lia.
+    }
+    destruct H as [H | H].
+    {
+      rewrite H.
+      rewrite skipn_O.
+      rewrite firstn_app.
+      rewrite skipn_length. rewrite <- H_length. rewrite H. rewrite firstn_O. rewrite app_nil_r.
+      rewrite firstn_skipn_comm.
+      assert (m + 1 = S m)%nat. 
+      {
+        lia.
+      }
+      rewrite H0.
+      apply firstn_skipn_succ.
+    }
+    exfalso.
+    lia.
+  }
+  rewrite H. easy.
 }
+now apply iter_rotate_config.
+Qed.
+
+
+Lemma rotate_eq : forall (c : configuration), isConfig c = true -> Nat.iter k rotate c = c.
+Proof.
+intros c H_c.
+rewrite rotate_nat_elim; [| easy| lia].
+unfold isConfig in H_c. apply andb_true_iff in H_c. destruct H_c as [H_length H_sum]. apply Nat.eqb_eq in H_length.
+rewrite H_length.
+rewrite skipn_all2; [| easy].
+now rewrite firstn_all2; [| easy].
+Qed.
+
+Lemma rotate_mod_k : forall (c : configuration) (m : nat), isConfig c = true -> (k < m)%nat -> Nat.iter m rotate c = Nat.iter (Nat.modulo m k) rotate c.
+intros c m H_c H_m.
+induction m.
+- easy.
+- simpl.
+admit.
+Admitted.
+
+Lemma rotations_rotate_perm : forall (c : configuration) (m : nat), isConfig c = true -> Permutation (rotations c) (rotations (Nat.iter m rotate c)).
+Proof.
 Admitted.
 
 Lemma rotations_rotate : forall (c : configuration) (m : nat), isConfig c = true -> incl (rotations (Nat.iter m rotate c)) (rotations c).
@@ -674,7 +840,122 @@ eexists (S x). split.
 *)
 Admitted.
 
+Lemma rotations_rotate_r : forall (c : configuration) (m : nat), isConfig c = true -> incl (rotations c) (rotations (Nat.iter m rotate c)).
+Proof.
+Admitted.
 
+Lemma configuration_min_max l : isConfig l = true -> configuration_min (repeat (Z.of_nat n) k) l = l.
+Proof.
+Admitted.
+
+Lemma aux_fold_min_elim l1 l2 : incl l1 l2 -> configuration_min (fold_right configuration_min (repeat (Z.of_nat n) k) l1) (fold_right configuration_min (repeat (Z.of_nat n) k) l2) = fold_right configuration_min (repeat (Z.of_nat n) k) l1.
+Proof.
+revert l2.
+induction l1 as [|x l1 IH]; cbn.
+- intros l2 H. 
+Admitted.
+
+Lemma fold_min_elim l1 l2 : Permutation l2 l1 -> fold_right configuration_min (repeat (Z.of_nat n) k) l1 = fold_right configuration_min (repeat (Z.of_nat n) k) l2.
+Proof.
+intros H.
+induction H; cbn.
+- easy.
+- congruence.
+- admit.
+- congruence.
+Admitted.
+
+
+Lemma fold_min_elim' l1 l2 : incl l1 l2 -> incl l2 l1 -> fold_right configuration_min (repeat (Z.of_nat n) k) l1 = fold_right configuration_min (repeat (Z.of_nat n) k) l2.
+Proof.
+revert l2.
+induction l1.
+- intros l2 H1 H2.
+destruct l2.
+{
+  easy.
+}
+apply incl_l_nil in H2. now exfalso.
+- intros l2. induction l2.
+{
+  intros H1 H2.
+  apply incl_l_nil in H1. now exfalso.  
+}
+intros H1 H2.
+rewrite (fold_right_cons_elim). rewrite fold_right_cons_elim.
+
+Admitted.
+
+Lemma map_seq {A : Type} (f : nat -> A) start len : (0 <= start < len)%nat -> map f (seq start len) = (f start) :: (map f (seq (S start) len)).
+Proof.
+intros H.
+rewrite <- map_cons.
+f_equal. 
+destruct H as [H1 H2].
+induction len.
+- easy.
+- intros. destruct H2.
+Admitted.
+
+
+
+Lemma rotations_elim c : isConfig c = true -> rotations c = (Nat.iter 0 rotate c) :: (map (fun x : nat => Nat.iter x rotate c) (seq 1 (length c))).
+Proof.
+intros H.
+unfold rotations.
+cbn.
+apply (@map_seq configuration (fun x : nat => Nat.iter x rotate c) 0 (length c)).
+unfold isConfig in H. apply andb_true_iff in H. destruct H as [H H1]. apply Nat.eqb_eq in H.
+rewrite <- H.
+destruct enoughRobots; lia.
+Qed.
+
+Lemma incl_rotations c1 c2: In c1 (rotations c2) -> incl (rotations c1) (rotations c2).
+Proof.
+Admitted.
+
+Lemma map_rotations f c : map f (rotations c) = rotations (f c).
+Proof.
+Admitted.
+
+Lemma obs_rep' : forall (c1 c2 : configuration), isConfig c1 = true -> isConfig c2 = true -> In c1 (observational_equivalence_class c2) -> rep c1 = rep c2.
+Proof.
+intros c1 c2 H_c1 H_c2 H_obs.
+unfold rep.
+rewrite H_c1. rewrite H_c2.
+unfold observational_equivalence_class in H_obs.
+apply in_app_or in H_obs.
+destruct H_obs.
+{
+  unfold rotations in H. apply in_map_iff in H. destruct H as [x [E_x H_x]].
+  apply fold_min_elim; unfold observational_equivalence_class.
+  rewrite <- E_x.
+  apply Permutation_app.
+  {
+    apply rotations_rotate_perm; easy.
+  }
+  apply Permutation_map.
+  apply rotations_rotate_perm; easy.
+}
+rewrite map_rotations in H.
+unfold rotations in H. apply in_map_iff in H. destruct H as [x [E_x H_x]].
+apply fold_min_elim; unfold observational_equivalence_class.
+assert (Permutation c2 c1).
+{
+  rewrite <- E_x.
+  admit.
+}
+apply Permutation_app.
+{
+  rewrite <- E_x.
+  admit.
+}
+apply Permutation_map.
+rewrite <- E_x.
+admit.
+Admitted.
+
+(*
 Lemma obs_rep : forall (c1 c2 : configuration), isConfig c1 = true -> isConfig c2 = true -> In c1 (observational_equivalence_class c2) -> rep c1 = rep c2.
 Proof.
 intros c1 c2 H_c1 H_c2 H_obs.
@@ -685,13 +966,47 @@ apply in_app_or in H_obs.
 destruct H_obs.
 {
   unfold rotations in H. apply in_map_iff in H. destruct H as [x [E_x H_x]].
-  rewrite <- E_x.
-  apply fold_right_eq.
-  unfold observational_equivalence_class.
-  
+  apply fold_min_elim; unfold observational_equivalence_class.
+  {  
+    apply incl_app; rewrite <- E_x.
+    {
+      apply incl_appl.
+      now apply rotations_rotate.
+    }
+    apply incl_appr.
+    apply incl_map.
+    now apply rotations_rotate.
+  }
+  apply incl_app; rewrite <- E_x.
+  {
+    apply incl_appl.
+    now apply rotations_rotate_r.
+  }
+  apply incl_appr.
+    apply incl_map.
+    now apply rotations_rotate_r.
 }
-
+apply in_map_iff in H.
+destruct H as [x [E_x H_x]].
+apply fold_min_elim; unfold observational_equivalence_class.
+{
+  rewrite <- E_x.
+  apply incl_app.
+  {
+    apply incl_appr.
+    apply incl_rotations in H_x.
+    rewrite <- map_rotations.
+    now apply incl_map.
+  }
+  apply incl_appl.
+  rewrite map_rotations.
+  rewrite rev_involutive.
+  now apply incl_rotations in H_x.
+}
+rewrite <- E_x.
+apply incl_app.
 Admitted.
+*)
 
 Lemma uniqueViews : forall (c1 c2 : configuration) v, isConfig c1 = true -> isConfig c2 = true -> In v (views c1) -> In v (views c2) ->
   incl (observational_equivalence_class c1) (observational_equivalence_class c2).
@@ -713,11 +1028,12 @@ assert (forall (A : Type) (l : list A), (rev l) = [] -> l = []) as H_rev.
 }
 apply H_rev in E_x.
 admit.
--
+-admit.
+Admitted.
 
 
 
-Lemma uniqueViews : forall (c1 c2 : configuration) v, isConfig c1 = true -> isConfig c2 = true -> In v (views c1) -> In v (views c2) ->
+Lemma uniqueViews'' : forall (c1 c2 : configuration) v, isConfig c1 = true -> isConfig c2 = true -> In v (views c1) -> In v (views c2) ->
   incl (observational_equivalence_class c1) (observational_equivalence_class c2).
 Proof.
 intros c1 c2 v H_c1 H_c2 H_v1 H_v2.
@@ -728,13 +1044,15 @@ unfold rotations in H_c_v2. apply in_map_iff in H_c_v2. destruct H_c_v2 as [y [E
 apply in_seq in H_x. apply in_seq in H_y.
 unfold incl.
 intros a H.
-
+(*
 apply obs_rep in H.
 - unfold observational_equivalence_class. apply in_or_app. apply or_introl.
 unfold rotations. apply in_map_iff. eexists y. split; [ | now apply in_seq].
 
 - admit.
 - easy.
+*)
+Admitted.
 
 Lemma uniqueViews' : forall (c1 c2 : configuration) v, isConfig c1 = true -> isConfig c2 = true -> In v (views c1) -> In v (views c2) -> rep c1 = rep c2.
 Proof.
@@ -765,12 +1083,11 @@ assert (rotations c1 = rotations c2).
     admit.
   }
   admit.
-
 }
-now rewrite H.
+
 Admitted.
 
-Lemma uniqueViews : forall (c1 c2 : configuration) v, In c1 configuration_quotient -> In c2 configuration_quotient -> In v (views c1) -> In v (views c2) -> c1 = c2.
+Lemma uniqueViews''' : forall (c1 c2 : configuration) v, In c1 configuration_quotient -> In c2 configuration_quotient -> In v (views c1) -> In v (views c2) -> c1 = c2.
 Proof.
 intros c1 c2 v H_c1 H_c2 H_v1 H_v2.
 apply configuration_quotient_spec in H_c1. destruct H_c1 as [r1 [E_r1_c1 E_r1]].
@@ -783,7 +1100,7 @@ induction x.
 
 Admitted.
 
-Lemma uniqueViews' : forall (c1 c2 : configuration), In c1 configuration_quotient -> In c2 configuration_quotient -> c1 <> c2 -> views c1 <> views c2.
+Lemma uniqueViews''''' : forall (c1 c2 : configuration), In c1 configuration_quotient -> In c2 configuration_quotient -> c1 <> c2 -> views c1 <> views c2.
 Proof.
 intros c1 c2 H_c1 H_c2 NE E.
 apply configuration_quotient_spec in H_c1.
@@ -892,8 +1209,324 @@ split.
 - assumption.
 Qed.
 
+Lemma always_elim : forall {A : Set} (s : stream A) (P : stream_formula A), 
+always P s -> (P s /\ always P (tl_str s)).
+Proof.
+intros A s P H.
+destruct H.
+split.
+- assumption.
+- assumption.
+Qed.
+
+Lemma concat_repeat_nil {A : Type} : forall (n : nat), (@nil A) = concat (repeat [] n).
+intros n. 
+induction n. 
+- now cbv.
+- now cbn.
+Qed.
+
+
+Lemma periodicAssumption {A : Type} (n : nat) (l1 l2 : list A) : l1 = concat (repeat l2 n) -> Nat.modulo (length l1) (length l2) = 0%nat /\ (length l1) = Nat.mul (length l2) n /\ l1 = concat (repeat l2 n).
+Proof.
+intros H. split.
+- admit.
+- admit.
+Admitted.
 
 Compute allTransitions 3 6 winningStrategy_k3_n6.
+
+Lemma strategyLosesforOddRobotsIfPeriodic' : forOddRobotsPeriodicIsLosing 3 6 rw_winningStrategy_k3_n6.
+Proof.
+unfold forOddRobotsPeriodicIsLosing.
+intros s init H_conf H_p H_run.
+destruct H_run as [H_init H_trans].
+destruct H_p as [H_p H_g].
+unfold isPeriodic in H_p.
+cbv in H_conf.
+assert (Nat.Odd 3) as H_o.
+{
+  unfold Nat.Odd. eexists 1%nat. lia.
+}
+apply H_p in H_o.
+repeat (destruct H_conf as [H | H_conf]).
+- revert H_trans. revert H_init. revert s. cofix CoH. intros s H_init H_trans. destruct s as [s_hd s_tl]. constructor.
+{
+  unfold state2stream_formula. rewrite H_init. rewrite <- H. unfold isPeriodic. intros H3. eexists 1%nat. eexists [1]. now cbv. 
+}
+simpl in H_trans.
+apply CoH.
+{
+  eapply always_state_elim in H_trans. destruct H_trans as [H_step1 H_always].
+  rewrite zip_stream_eq_head in H_step1. simpl in H_step1. simpl in H_init.
+  rewrite H_init in H_step1.
+  destruct H_step1 as [a1 H_step1].
+  apply allTransitions_spec' in H_step1.
+  destruct H_step1 as [m1 [H_conf_init [H_succ_init H_forall_init]]]. 
+  rewrite <- H in H_forall_init. cbn in H_forall_init. repeat (destruct H_forall_init as [H_m | H_forall_init]).
+  + rewrite <- H_succ_init. rewrite <- H. rewrite <- H_m. now cbv.
+  + rewrite <- H_succ_init. rewrite <- H. rewrite <- H_m. cbv. admit. (* Ab hier gehts schief...*)
+  + rewrite <- H_succ_init. rewrite <- H. rewrite <- H_m. cbv. admit.
+  + rewrite <- H_succ_init. rewrite <- H. rewrite <- H_m. cbv. admit.
+  + rewrite <- H_succ_init. rewrite <- H. rewrite <- H_m. cbv. admit.
+  + rewrite <- H_succ_init. rewrite <- H. rewrite <- H_m. cbv. admit.
+  + rewrite <- H_succ_init. rewrite <- H. rewrite <- H_m. cbv. admit.
+  + rewrite <- H_succ_init. rewrite <- H. rewrite <- H_m. now cbv.
+  + now clear -H_forall_init.
+}
+eapply always_state_elim in H_trans. destruct H_trans as [H_step1 H_always].
+now rewrite zip_stream_eq_tail in H_always. 
+- admit.
+- admit.
+- admit.
+- admit.
+- assert (forall (n : nat) (p : list Z), ([-1; 0; 4] = concat (repeat p (n+2)%nat)) -> False) as H_false.
+{
+  intros n p E.
+  apply periodicAssumption in E. destruct E as [E1 [E2 E3]].
+  assert (length [-1; 0; 4] = 3%nat).
+  {
+    easy.
+  }
+  rewrite H0 in E1.
+  rewrite H0 in E2.
+  destruct n. 
+  {
+    clear -E2. lia.
+  }
+  revert E3.
+  destruct p.
+  {
+    now intros H1.
+  }
+  intros H1.
+  
+}
+destruct H_o as [m [l E]]. admit.
+- rewrite <- H in H_g. now cbv in H_g. 
+- easy.
+Admitted.
+
+Lemma not_eventually_always_not {A : Set} : forall s : stream A, forall P : stream_formula A, (not (ltl.eventually P s)) <-> (ltl.always (fun x => not (P x)) s).
+Proof.
+intros s P.
+split.
+- revert s P. cofix CoH. intros s P H. destruct s. constructor.
+{
+  intros H_p. assert (ltl.eventually P (cons_str a s)) as H_f.
+  {
+    now constructor. 
+  }
+  now apply H in H_f.
+}
+apply CoH. 
+intros H_e.
+assert (ltl.eventually P (cons_str a s)) as H_f.
+{
+  now apply ev_t.
+}
+now apply H in H_f.
+- intros H_a H_e. induction H_e.
+{
+  apply always_elim in H_a.
+  destruct H_a as [H_f H_tl].
+  now apply H_f in H.
+}
+apply always_elim in H_a.
+destruct H_a as [H_p H_tl].
+simpl in H_tl.
+now apply IHH_e in H_tl.
+Qed.
+
+CoFixpoint losing_stream : stream configuration := cons_str [1;1;1] losing_stream.
+
+Lemma strategyLosesforOddRobotsIfPeriodic'' : forOddRobotsPeriodicIsLosing' 3 6 rw_winningStrategy_k3_n6.
+Proof.
+unfold forOddRobotsPeriodicIsLosing'.
+intros init H_conf [H_p H_g] H_s.
+unfold isPeriodic in H_p.
+cbv in H_conf.
+assert (Nat.Odd 3) as H_o.
+{
+  unfold Nat.Odd. eexists 1%nat. lia.
+}
+apply H_p in H_o.
+repeat (destruct H_conf as [H | H_conf]).
+- specialize (H_s losing_stream). rewrite <- H in H_s. 
+assert (head_str losing_stream = [1; 1; 1] /\ 
+always 
+(state2stream_formula (fun p : configuration * configuration => step (allTransitionsLabeled 3 6 rw_winningStrategy_k3_n6) (fst p) (snd p))) 
+(zip_stream losing_stream (tl_str losing_stream))) as H_arg.
+{
+  split; [easy |].
+  simpl. cofix CoH. rewrite (elim_stream (zip_stream losing_stream losing_stream)).
+  constructor.
+  {
+    unfold state2stream_formula. cbn. apply C_trans with (a := ()). cbv. now apply or_introl.
+  }
+  simpl. apply CoH. 
+}
+specialize (H_s H_arg).
+revert H_s.
+apply not_eventually_always_not.
+rewrite elim_stream. simpl.
+cofix CoH. 
+constructor.
+{
+  intros H_f.
+  unfold state2stream_formula in H_f. simpl in H_f. now clear -H_f.
+}
+now rewrite elim_stream. 
+- assert (forall (n : nat) (p : list Z), (init = concat (repeat p (n+2)%nat)) -> False) as H_f.
+{
+  intros n l.
+  rewrite <- H.
+  destruct n as [|[|n]].
+  - now destruct l as [|? [|? [|? [|? ?]]]].
+  - destruct l as [|? [|? [|? [|? ?]]]]; cbn; congruence.
+  - destruct l as [|? [|? [|? [|? ?]]]]; cbn; [|try congruence ..].
+    now induction n.
+}
+destruct H_o as [m [l E]]. now apply (H_f m l) in E.
+- assert (forall (n : nat) (p : list Z), (init = concat (repeat p (n+2)%nat)) -> False) as H_f.
+{
+  intros n l.
+  rewrite <- H.
+  destruct n as [|[|n]].
+  - now destruct l as [|? [|? [|? [|? ?]]]].
+  - destruct l as [|? [|? [|? [|? ?]]]]; cbn; congruence.
+  - destruct l as [|? [|? [|? [|? ?]]]]; cbn; [|try congruence ..].
+    now induction n.
+}
+destruct H_o as [m [l E]]. now apply (H_f m l) in E.
+- assert (forall (n : nat) (p : list Z), (init = concat (repeat p (n+2)%nat)) -> False) as H_f.
+{
+  intros n l.
+  rewrite <- H.
+  destruct n as [|[|n]].
+  - now destruct l as [|? [|? [|? [|? ?]]]].
+  - destruct l as [|? [|? [|? [|? ?]]]]; cbn; congruence.
+  - destruct l as [|? [|? [|? [|? ?]]]]; cbn; [|try congruence ..].
+    now induction n.
+}
+destruct H_o as [m [l E]]. now apply (H_f m l) in E.
+- assert (forall (n : nat) (p : list Z), (init = concat (repeat p (n+2)%nat)) -> False) as H_f.
+{
+  intros n l.
+  rewrite <- H.
+  destruct n as [|[|n]].
+  - now destruct l as [|? [|? [|? [|? ?]]]].
+  - destruct l as [|? [|? [|? [|? ?]]]]; cbn; congruence.
+  - destruct l as [|? [|? [|? [|? ?]]]]; cbn; [|try congruence ..].
+    now induction n.
+}
+destruct H_o as [m [l E]]. now apply (H_f m l) in E.
+- assert (forall (n : nat) (p : list Z), (init = concat (repeat p (n+2)%nat)) -> False) as H_f.
+{
+  intros n l.
+  rewrite <- H.
+  destruct n as [|[|n]].
+  - now destruct l as [|? [|? [|? [|? ?]]]].
+  - destruct l as [|? [|? [|? [|? ?]]]]; cbn; congruence.
+  - destruct l as [|? [|? [|? [|? ?]]]]; cbn; [|try congruence ..].
+    now induction n.
+}
+destruct H_o as [m [l E]]. now apply (H_f m l) in E.
+- rewrite <- H in H_g. now cbv in H_g.
+- easy.
+Qed.
+
+Lemma strategyLosesforOddRobotsIfPeriodic : forOddRobotsPeriodicIsLosing 3 6 winningStrategy_k3_n6.
+Proof.
+unfold forOddRobotsPeriodicIsLosing.
+intros s init H_conf H_p H_run.
+destruct H_run as [H_init H_trans].
+destruct H_p as [H_p H_g].
+unfold isPeriodic in H_p.
+cbv in H_conf.
+assert (Nat.Odd 3) as H_o.
+{
+  unfold Nat.Odd. eexists 1%nat. lia.
+}
+apply H_p in H_o.
+repeat (destruct H_conf as [H | H_conf]).
+- revert H_trans. revert H_init. revert s. cofix CoH. intros s H_init H_trans. destruct s as [s_hd s_tl]. constructor.
+{
+  unfold state2stream_formula. rewrite H_init. rewrite <- H. unfold isPeriodic. intros H3. eexists 1%nat. eexists [1]. now cbv. 
+}
+simpl in H_trans.
+apply CoH.
+{
+  eapply always_state_elim in H_trans. destruct H_trans as [H_step1 H_always].
+  rewrite zip_stream_eq_head in H_step1. simpl in H_step1. simpl in H_init.
+  rewrite H_init in H_step1.
+  destruct H_step1 as [a1 H_step1].
+  apply allTransitions_spec' in H_step1.
+  destruct H_step1 as [m1 [H_conf_init [H_succ_init H_forall_init]]]. 
+  rewrite <- H in H_forall_init. cbn in H_forall_init. destruct H_forall_init as [H_m1 | H_false]; [| easy].
+  rewrite <- H in H_succ_init. rewrite <- H_m1 in H_succ_init. 
+  rewrite <- H_succ_init. rewrite <- H. now cbv.
+}
+eapply always_state_elim in H_trans. destruct H_trans as [H_step1 H_always].
+now rewrite zip_stream_eq_tail in H_always. 
+- assert (forall (n : nat) (p : list Z), (init = concat (repeat p (n+2)%nat)) -> False) as H_false.
+{
+  intros n l.
+  rewrite <- H.
+  destruct n as [|[|n]].
+  - now destruct l as [|? [|? [|? [|? ?]]]].
+  - destruct l as [|? [|? [|? [|? ?]]]]; cbn; congruence.
+  - destruct l as [|? [|? [|? [|? ?]]]]; cbn; [|try congruence ..].
+    now induction n.
+}
+destruct H_o as [m [l E]]. now apply (H_false m l) in E.
+- assert (forall (n : nat) (p : list Z), (init = concat (repeat p (n+2)%nat)) -> False) as H_false.
+{
+  intros n l.
+  rewrite <- H.
+  destruct n as [|[|n]].
+  - now destruct l as [|? [|? [|? [|? ?]]]].
+  - destruct l as [|? [|? [|? [|? ?]]]]; cbn; congruence.
+  - destruct l as [|? [|? [|? [|? ?]]]]; cbn; [|try congruence ..].
+    now induction n.
+}
+destruct H_o as [m [l E]]. now apply (H_false m l) in E.
+- assert (forall (n : nat) (p : list Z), (init = concat (repeat p (n+2)%nat)) -> False) as H_false.
+{
+  intros n l.
+  rewrite <- H.
+  destruct n as [|[|n]].
+  - now destruct l as [|? [|? [|? [|? ?]]]].
+  - destruct l as [|? [|? [|? [|? ?]]]]; cbn; congruence.
+  - destruct l as [|? [|? [|? [|? ?]]]]; cbn; [|try congruence ..].
+    now induction n.
+}
+destruct H_o as [m [l E]]. now apply (H_false m l) in E.
+- assert (forall (n : nat) (p : list Z), (init = concat (repeat p (n+2)%nat)) -> False) as H_false.
+{
+  intros n l.
+  rewrite <- H.
+  destruct n as [|[|n]].
+  - now destruct l as [|? [|? [|? [|? ?]]]].
+  - destruct l as [|? [|? [|? [|? ?]]]]; cbn; congruence.
+  - destruct l as [|? [|? [|? [|? ?]]]]; cbn; [|try congruence ..].
+    now induction n.
+}
+destruct H_o as [m [l E]]. now apply (H_false m l) in E.
+- assert (forall (n : nat) (p : list Z), (init = concat (repeat p (n+2)%nat)) -> False) as H_false.
+{
+  intros n l.
+  rewrite <- H.
+  destruct n as [|[|n]].
+  - now destruct l as [|? [|? [|? [|? ?]]]].
+  - destruct l as [|? [|? [|? [|? ?]]]]; cbn; congruence.
+  - destruct l as [|? [|? [|? [|? ?]]]]; cbn; [|try congruence ..].
+    now induction n.
+}
+destruct H_o as [m [l E]]. now apply (H_false m l) in E.
+- rewrite <- H in H_g. now cbv in H_g. 
+- easy.
+Qed.
 
 Lemma strategyWinsOddRobots : correctStrategyForOddNumberOfRobots 3 6 winningStrategy_k3_n6.
 Proof.
