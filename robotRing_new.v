@@ -373,6 +373,17 @@ Lemma rotate_eq : forall (c : configuration), isConfig c = true -> Nat.iter k ro
 Definition rotations (l : configuration) : list (configuration) := 
     map (fun (x : nat) => Nat.iter x rotate l) (seq 0 (length l)).
 
+Lemma map_seq {A : Type} (f : nat -> A) start len : (0 <= start < len)%nat -> map f (seq start len) = (f start) :: (map f (seq (S start) len)).
+Proof.
+intros H.
+rewrite <- map_cons.
+f_equal. 
+destruct H as [H1 H2].
+induction len.
+- easy.
+- intros. destruct H2.
+Admitted.
+
 Lemma rotations_elim c : isConfig c = true -> rotations c = (Nat.iter 0 rotate c) :: (map (fun x : nat => Nat.iter x rotate c) (seq 1 (length c))).
     Proof.
     intros H.
@@ -704,16 +715,6 @@ Definition allTransitionsLabeled (u : unit) : relation configuration :=
 
 
 (*
-Lemma elim_none_or_one_step : forall (s s': configuration), none_or_one_step allTransitionsLabeled s s' -> ((s = s') \/ (step allTransitionsLabeled s s')).
-  Proof.
-  intros s s' H.
-  destruct H.
-  - left. reflexivity.
-  - right. assumption.
-  Qed.
-*)
-
-(*
 respectsTransitions corresponds to ltl.run, but does not allow a none_step.
 *)
 Definition respectsTransitions (s : stream configuration) (c : configuration) := ((head_str s) = c) /\ 
@@ -768,20 +769,4 @@ Definition rw_winningStrategy_k3_n6 (v : list Z) : option move :=
     end.
 
 
-
-
-Lemma strategy_step : forall (s : stream configuration),
-  (always (state2stream_formula (fun p => step (allTransitionsLabeled 3 6 winningStrategy_k3_n6) (fst p) (snd p))) (zip_stream s (tl_str s))) ->
-  step (allTransitionsLabeled 3 6 winningStrategy_k3_n6) (head_str s) (head_str (tl_str s)).
-Proof.
-intros s H_trans.
-destruct s. eapply C_trans with (a := ()). simpl. simpl in H_trans. 
-assert (exists (str : stream (configuration * configuration)), str =  (zip_stream (cons_str c s) s) /\ always (state2stream_formula (fun p : configuration * configuration => step (allTransitionsLabeled 3 6 winningStrategy_k3_n6) (fst p) (snd p))) str).
-{
-  eexists. now split.
-}
-destruct H as [str [E_str H]]. destruct H. destruct H. simpl in H.  
-eapply stream_eq_head in E_str. rewrite zip_stream_eq_head in E_str. simpl in E_str. 
-rewrite E_str in H. simpl in H. assumption.
-Qed.
 
