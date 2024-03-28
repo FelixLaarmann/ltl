@@ -196,16 +196,16 @@ Context (player : bool) (f : list A -> A -> A).
 
 Definition is_strategy : Prop := 
     forall (l : list A), (Forall (fun x => set_In x (positions arena)) l) -> 
-    forall (v : A), ((player_positions arena) v = player) ->
+    forall (v : A), (In v (positions arena)) -> ((player_positions arena) v = player) ->
     set_In (v, f l v) (edges arena).
 
 Definition consistent_with (s : Stream A) : Prop :=  
     forall (n : nat), (player_positions arena) (Str_nth n s) = player -> f (take n s) (Str_nth n s) = Str_nth (S n) s.
 
-Definition memoryless : Prop := is_strategy -> forall (l : list A) (v : A), f nil v = f l v.
+Definition memoryless : Prop := forall (l : list A) (v : A), f nil v = f l v.
 
 Definition winningFrom (v : A) : Prop := 
-    forall (s : Stream A), consistent_with s -> (v = hd s) -> winCon s.
+    forall (s : Stream A), play s -> consistent_with s -> (v = hd s) -> winCon s.
 
 End strategies.
 
@@ -217,12 +217,6 @@ Definition winningRegion (player : bool) (pos : set A) : Prop :=
 
 Definition uniform_winning (player : bool) (f : list A -> A -> A) : Prop := 
     forall (w : set A), winningRegion player w -> forall (v : A), set_In v w -> winningFrom player f v.
-
-(*
-!!!!!!!!!!!!!
-Folgende Lemma zeigen
-!!!!!!!!!!!!!
-*)
 
 (*
 Note that the strategies   and   of the two players together uniquely
@@ -311,11 +305,13 @@ Definition determined : Prop := forall (ps os : set A), winningRegion true ps ->
 End games.
 
 Section reachability_games.
-Context {A : Type} (carrier_dec : forall x y : A, {x = y} + {x <> y}) (arena : Arena A).
+Context {A : Type} (carrier_dec : forall x y : A, {x = y} + {x <> y}) (arena : Arena A) (reach' : set A) (reach'_pos : incl reach' (positions arena)).
 
-Inductive winCon (reach : set A) : Stream A -> Prop := 
-  | reach_hd : forall (s : Stream A), set_In (hd s) reach -> winCon reach s
-  | reach_tl : forall (p : A) (s : Stream A), winCon reach s -> winCon reach (Cons p s).
+Definition reach : set A := nodup carrier_dec reach'.
+
+Inductive winCon : Stream A -> Prop := 
+  | reach_hd : forall (s : Stream A), set_In (hd s) reach -> winCon s
+  | reach_tl : forall (p : A) (s : Stream A), winCon s -> winCon (Cons p s).
 
 Definition carrier_eqb (x y : A) : bool :=
     match carrier_dec x y with
@@ -694,16 +690,20 @@ apply set_union_nodup.
 apply cpre_nodup. now apply IHn.
 Qed.
 
-Lemma attractor_terminates : forall (r : set A), NoDup r -> incl r (positions arena) -> exists (n : nat), Permutation (attractor n r) (attractor (S n) r).
+Lemma attractor_terminates : forall (r : set A), NoDup r -> incl r (positions arena) -> exists (n : nat), (n <= (length (positions arena))) /\ Permutation (attractor n r) (attractor (S n) r).
 Proof.
 intros r H_nodup H_r.
 exists (length (positions arena)).
+split.
+{
+    lia.
+}
 apply NoDup_Permutation.
 - induction (length (positions arena)); auto. simpl. apply set_union_nodup. 
 {
     easy.
 } 
-now apply cpre_nodup.
+now apply cpre_nodup. 
 - induction (length (positions arena)); auto. simpl. apply set_union_nodup. 
 {
     easy.
@@ -768,6 +768,108 @@ apply cpre_ran in H_x.
 apply H_t in H_x.
 apply set_union_elim in H_x as [|]; [now exfalso | easy].
 Qed.
+
+Check List.hd.
+Definition sigma (w : list A) (v : A) : A :=
+    let attr := attractor (length (positions arena)) reach in
+    if (Bool.eqb ((player_positions arena) v) player)
+    then let succs := set_map carrier_dec snd (filter (fun p => carrier_eqb (fst p) v) (edges arena)) in 
+      match (set_inter carrier_dec succs attr) with
+      | nil => List.hd v succs
+      | (v' :: vs) => v'
+      end
+    else v.
+
+Lemma sigma_memoryless : memoryless sigma.
+Proof.
+easy.
+Qed.
+
+Lemma sigma_strategy : is_strategy arena player sigma.
+Proof.
+intros l Hl v Hv Hb.
+rewrite <- sigma_memoryless.
+unfold sigma. rewrite Hb. rewrite Bool.eqb_reflx. apply out_edges_positions in Hv as [v' He].
+assert (In v' (set_map carrier_dec snd (filter (fun p : A * A => carrier_eqb (fst p) v) (edges arena)))) as H2.
+{
+    apply set_in_map_iff. exists (v,v'). split; auto.
+    apply filter_In. now rewrite carrier_eqb_refl.
+}
+destruct (set_map carrier_dec snd (filter (fun p : A * A => carrier_eqb (fst p) v) (edges arena))) eqn: Hv.
+{
+    now exfalso.
+}
+destruct (set_inter carrier_dec (a :: s) (attractor (length (positions arena)) reach)) eqn: Hi.
+{
+    assert (In a (set_map carrier_dec snd (filter (fun p : A * A => carrier_eqb (fst p) v) (edges arena)))).
+    {
+        rewrite Hv. simpl. now left.
+    }
+    apply set_in_map_iff in H as [p [E2 Hp]]. apply filter_In in Hp as [Hp H1].
+    unfold carrier_eqb in H1. destruct (carrier_dec (fst p) v) as [E1 | E1].
+    {
+        rewrite <- E1. rewrite <- E2. now rewrite <- surjective_pairing.
+    }
+    now exfalso.
+}
+assert (In a0 (set_inter carrier_dec (a :: s) (attractor (length (positions arena)) reach))).
+{
+    rewrite Hi. simpl. now left.
+}
+apply set_inter_elim in H as [H _].
+rewrite <- Hv in H.
+apply set_in_map_iff in H as [p [E2 H]]. apply filter_In in H as [H E1].
+rewrite <- E2. unfold carrier_eqb in E1. destruct (carrier_dec (fst p) v).
+{
+    rewrite <- e. now rewrite <- surjective_pairing.
+}
+now exfalso.
+Qed.
+
+Lemma attractor_winning_region : winningRegion arena winCon player (attractor (length (positions arena)) reach).
+Proof.
+unfold winningRegion.
+intros v Hv.
+exists sigma.
+intros s Hs Hcs E.
+apply play_play'_ext_eq in Hs.
+unfold play' in Hs.
+unfold consistent_with in Hcs.
+unfold sigma in Hcs.
+destruct (Bool.eqb (player_positions arena v) player) eqn: Hb.
+{
+    specialize (Hcs 0). 
+    destruct s. cbn in Hcs. simpl in E. rewrite <- E in Hcs.
+    rewrite Hb in Hcs. 
+    assert (player_positions arena v = player).
+    {
+        now apply Bool.eqb_prop.
+    }
+    specialize (Hcs H).
+    destruct ((set_map carrier_dec snd (filter (fun p : A * A => carrier_eqb (fst p) v) (edges arena)))) eqn: H1.
+    {
+        exfalso.
+        (* v muss position sein -> exfalso mit out_edges*)
+        admit.
+    }
+    simpl in Hcs.
+    (* set_mem induction???*)
+    destruct (set_mem carrier_dec a0 (attractor (length (positions arena)) reach)).
+    {
+        (* successor im attractor -> es existiert ein endlich Prefix, sodass reach erreicht wird
+        --> Hilfslemma? *)
+        admit.
+    }
+    admit.
+}
+clear Hcs.
+(*
+Da v im attractor ist, sind die möglichen Nachfolger von v
+durch den attractor beschränkt.
+Induktion -> und dann wahrscheinlich das obige Hilfslemma.
+*)
+admit.
+Admitted.
 
 End fix_player.
 End reachability_games.
