@@ -768,5 +768,9 @@ Definition rw_winningStrategy_k3_n6 (v : list Z) : option move :=
       | _ => None
     end.
 
-
+Lemma test: winningStrategy 3 6 rw_winningStrategy_k3_n6 [[1; 1; 1]; [0; 1; 2]; [-1; 2; 2]; [0; 0; 3]; [
+  -1; 1; 3]; [-1; 0; 4]; [-1; -1; 5]].
+Proof.
+intros c Hcq Hc.
+repeat destruct Hc as [Hc | Hc]; try easy; rewrite <- Hc in Hcq.
 

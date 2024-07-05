@@ -4,6 +4,8 @@ Require Import Streams.
 Require Import PeanoNat.
 Require Import Permutation.
 Require Import Lia.
+Require Import Bool.
+Require Import DecBool.
 
 Require Import ListSet.
 
@@ -15,16 +17,22 @@ Fixpoint take {A : Type} (n : nat) (s : Stream A) : list A :=
       | S m => (hd s) :: take m (tl s)
     end.
 
-Lemma firstn_take : forall {A : Type} (n m: nat) (s : Stream A), n < m -> firstn n (take m s) = take n s.
+Lemma firstn_take : forall {A : Type} (n m: nat) (s : Stream A), 
+  n < m -> 
+  firstn n (take m s) = take n s.
 Proof.
 intros A n m s H.
 revert s m H.
 induction n.
 - auto.
-- intros s m H. simpl. destruct m; [easy |]. simpl. f_equal. apply IHn. lia.
+- intros s m H. simpl. 
+destruct m; [easy |]. simpl. 
+f_equal. apply IHn. lia.
 Qed.
 
-Lemma take_elim : forall {A : Type} (ls : list A) (n : nat) (s : Stream A), ls = take (S n) s -> firstn n ls = take n s /\ length ls = (S n).
+Lemma take_elim : forall {A : Type} (ls : list A) (n : nat) (s : Stream A), 
+  ls = take (S n) s -> 
+  firstn n ls = take n s /\ length ls = (S n).
 Proof.
 intros A ls n s H.
 split.
@@ -37,11 +45,14 @@ induction ls; intros n H.
 rewrite H. clear H.
 revert s. induction n; intros s.
 + easy.
-+ destruct s. simpl. f_equal. specialize (IHn s). now rewrite <- IHn.
++ destruct s. simpl. f_equal. 
+specialize (IHn s). now rewrite <- IHn.
 Qed.
 
 
-Lemma eqst_takeeq : forall {A : Type} (n : nat) (s1 s2 : Stream A), EqSt s1 s2 -> take n s1 = take n s2.
+Lemma eqst_takeeq : forall {A : Type} (n : nat) (s1 s2 : Stream A), 
+  EqSt s1 s2 -> 
+  take n s1 = take n s2.
 Proof. 
 induction n. 
 - intros s1 s2 H. case H. easy.
@@ -49,26 +60,33 @@ induction n.
 case H. intros H_hd H_tl. f_equal; auto.
 Qed.
 
-Lemma takeeq_eqst : forall {A : Type} (s1 s2 : Stream A), (forall (n : nat), take n s1 = take n s2) -> EqSt s1 s2.
+Lemma takeeq_eqst : forall {A : Type} (s1 s2 : Stream A), 
+  (forall (n : nat), take n s1 = take n s2) -> 
+  EqSt s1 s2.
 Proof.
 cofix CoH. 
 intros A s1 s2 H.
 constructor.
 - specialize (H 1). simpl in H. now inversion H.
-- apply CoH. intros n. specialize (H (S n)). simpl in H. now inversion H.
+- apply CoH. intros n. specialize (H (S n)). 
+simpl in H. now inversion H.
 Qed.
 
-Lemma Str_nth_0_hd : forall {A : Type} (s : Stream A), Str_nth 0 s = hd s.
+Lemma Str_nth_0_hd : forall {A : Type} (s : Stream A), 
+  Str_nth 0 s = hd s.
 Proof.
 auto.
 Qed.
 
-Lemma Str_nth_S_tl : forall {A : Type} (s : Stream A) (n : nat), Str_nth (S n) s = Str_nth n (tl s).
+Lemma Str_nth_S_tl : forall {A : Type} (s : Stream A) (n : nat), 
+  Str_nth (S n) s = Str_nth n (tl s).
 Proof.
 auto.
 Qed.
 
-Lemma take_S : forall {A : Type} (n : nat) (s1 s2 : Stream A), take (S n) s1 = take (S n) s2 -> take n s1 = take n s2.
+Lemma take_S : forall {A : Type} (n : nat) (s1 s2 : Stream A), 
+  take (S n) s1 = take (S n) s2 -> 
+  take n s1 = take n s2.
 Proof.
 intros A n. 
 induction n; intros s1 s2 H.
@@ -78,7 +96,8 @@ induction n; intros s1 s2 H.
 + apply IHn. inversion H. simpl. now f_equal.
 Qed.
 
-Lemma take_elim_nth : forall {A : Type} (n : nat) (s : Stream A), take (S n) s = take n s ++ [Str_nth n s].
+Lemma take_elim_nth : forall {A : Type} (n : nat) (s : Stream A), 
+  take (S n) s = take n s ++ [Str_nth n s].
 Proof.
 intros A n. induction n; intros s.
 - simpl. now rewrite Str_nth_0_hd.
@@ -89,7 +108,10 @@ intros A n. induction n; intros s.
 rewrite H. rewrite (IHn (tl s)). simpl. now rewrite Str_nth_S_tl.
 Qed.
 
-Lemma take_eq : forall {A : Type} (n : nat) (s1 s2 : Stream A), take n s1 = take n s2 -> Str_nth n s1 = Str_nth n s2 -> take (S n) s1 = take (S n) s2.
+Lemma take_eq : forall {A : Type} (n : nat) (s1 s2 : Stream A), 
+  take n s1 = take n s2 -> 
+  Str_nth n s1 = Str_nth n s2 -> 
+  take (S n) s1 = take (S n) s2.
 Proof.
 intros A n s1 s2.
 destruct n; intros H1 H2. 
@@ -102,7 +124,9 @@ Proof.
 induction l; auto.
 Qed.
 
-Lemma set_in_map_iff: forall {A B : Type} (dec : forall x y : B, {x = y} + {x <> y}) (f : A -> B) (l : set A) (b : B), set_In b (set_map dec f l) <-> (exists a : A, f a = b /\ set_In a l).
+Lemma set_in_map_iff: forall {A B : Type} (dec : forall x y : B, {x = y} + {x <> y}) (f : A -> B) (l : set A) (b : B), 
+  set_In b (set_map dec f l) <-> 
+  (exists a : A, f a = b /\ set_In a l).
 Proof.
 intros A B dec f l b.
 split.
@@ -127,6 +151,31 @@ simpl. apply set_add_intro. simpl in H. destruct H.
 right. now apply IHl.
 Qed.
 
+Lemma set_map_eq_nil: forall {A B : Type} (dec : forall x y : B, {x = y} + {x <> y}) (f : A -> B) (l : set A), 
+  set_map dec f l = [] -> 
+  l = [].
+Proof.
+intros A B dec f l H.
+destruct l.
+- easy.
+- now apply set_add_not_empty in H.
+Qed.
+
+Section Fun.
+
+Context {X Y : Type} (f : nat -> Y) (P : X -> Y -> Prop).
+Context (f_mon : forall i j, i <= j -> forall x, P x (f i) -> P x (f j)) (P_dec : forall x y, {P x y} + {not (P x y)}).
+
+Lemma find (x : X) (n : nat) : 
+  not (P x (f 0)) -> 
+  P x (f n) -> 
+  exists i, (not (P x (f i))) /\ P x (f (S i)).
+Proof.
+  induction n as [|n ?]; [|destruct (P_dec x (f n))]; eauto.
+Qed.
+
+End Fun.
+
 (*
 infinite two-player games on finite graphs
 *)
@@ -149,9 +198,12 @@ Section games.
 
 Context {A : Type} (arena : Arena A) (winCon : Stream A -> Prop).
 
-Definition play' (s : Stream A) : Prop := forall (n : nat), set_In (Str_nth n s, Str_nth (S n) s) (edges arena).
+Definition play' (s : Stream A) : Prop := forall (n : nat), 
+  set_In (Str_nth n s, Str_nth (S n) s) (edges arena).
 
-Lemma play'_elim : forall (s : Stream A), play' s -> (set_In ((hd s), (hd (tl s))) (edges arena)) /\ play' (tl s).
+Lemma play'_elim : forall (s : Stream A), 
+  play' s -> 
+  (set_In ((hd s), (hd (tl s))) (edges arena)) /\ play' (tl s).
 Proof.
 intros s H. unfold play' in H. split.
 - now specialize (H 0).
@@ -165,15 +217,20 @@ CoInductive play : Stream A -> Prop :=
   C_play : forall (v v' : A) (s : Stream A),
     set_In (v, v') (edges arena) -> play (Cons v' s) -> play (Cons v (Cons v' s)).
 
-Lemma play_elim : forall (s : Stream A), play s -> (set_In ((hd s), (hd (tl s))) (edges arena)) /\ play (tl s).
+Lemma play_elim : forall (s : Stream A), 
+  play s -> 
+  (set_In ((hd s), (hd (tl s))) (edges arena)) /\ play (tl s).
 Proof.
 intros s H. destruct H. now split.
 Qed.
 
-Lemma play_play'_ext_eq : forall (s : Stream A), play' s <-> play s.
+Lemma play_play'_ext_eq : forall (s : Stream A), 
+  play' s <-> 
+  play s.
 Proof.
 intros s. split.
-- revert s. cofix CoH. intros s H. destruct s as [s_hd s_tl]. destruct s_tl as [s_tl_hd s_tl_tl]. constructor.
+- revert s. cofix CoH. intros s H. destruct s as [s_hd s_tl]. 
+destruct s_tl as [s_tl_hd s_tl_tl]. constructor.
 {
     specialize (H 0). now cbn in H.
 }
@@ -194,29 +251,53 @@ Section strategies.
 
 Context (player : bool) (f : list A -> A -> A).
 
+(*
+l noch zu allgemein, muss wahrscheinlich auf "konsistent" memories eingeschränkt werden
+*)
 Definition is_strategy : Prop := 
-    forall (l : list A), (Forall (fun x => set_In x (positions arena)) l) -> 
-    forall (v : A), (In v (positions arena)) -> ((player_positions arena) v = player) ->
+    forall (l : list A), 
+    (Forall (fun x => set_In x (positions arena)) l) -> 
+    forall (v : A), 
+    (In v (positions arena)) -> 
+    ((player_positions arena) v = player) ->
     set_In (v, f l v) (edges arena).
 
 Definition consistent_with (s : Stream A) : Prop :=  
-    forall (n : nat), (player_positions arena) (Str_nth n s) = player -> f (take n s) (Str_nth n s) = Str_nth (S n) s.
+  forall (n : nat), 
+  (player_positions arena) (Str_nth n s) = player -> 
+  f (take n s) (Str_nth n s) = Str_nth (S n) s.
 
 Definition memoryless : Prop := forall (l : list A) (v : A), f nil v = f l v.
 
 Definition winningFrom (v : A) : Prop := 
-    forall (s : Stream A), play s -> consistent_with s -> (v = hd s) -> winCon s.
+  forall (s : Stream A), 
+  play s -> 
+  consistent_with s -> 
+  (v = hd s) ->
+  winCon s.
 
 End strategies.
 
 (* Note that the strategies for different positions in the winning region may be different. *)
+(* Falsch: *)
+Definition winningRegion' (player : bool) (pos : set A) : Prop :=  
+  forall (v : A), 
+  set_In v pos -> 
+  exists (f : list A -> A -> A), 
+  winningFrom player f v.
+
 Definition winningRegion (player : bool) (pos : set A) : Prop :=  
-    forall (v : A), set_In v pos -> 
-    exists (f : list A -> A -> A), 
-    winningFrom player f v.
+    forall (v : A), 
+    set_In v (positions arena) ->
+    (exists (f : list A -> A -> A), winningFrom player f v) -> 
+    set_In v pos.    
 
 Definition uniform_winning (player : bool) (f : list A -> A -> A) : Prop := 
-    forall (w : set A), winningRegion player w -> forall (v : A), set_In v w -> winningFrom player f v.
+    forall (w : set A), 
+    winningRegion player w -> 
+    forall (v : A), 
+    set_In v w -> 
+    winningFrom player f v.
 
 (*
 Note that the strategies   and   of the two players together uniquely
@@ -231,9 +312,12 @@ CoFixpoint play_for_strategies (ps os : list A -> A -> A) (memory : list A) (v :
 Lemma play_for_strategies_unique : 
   forall (ps os : list A -> A -> A),
   forall (v : A),
-  forall (s : Stream A), v = hd s ->
-  consistent_with true ps s -> consistent_with false os s ->
-  forall (s' : Stream A), v = hd s' -> 
+  forall (s : Stream A), 
+  v = hd s ->
+  consistent_with true ps s ->
+  consistent_with false os s ->
+  forall (s' : Stream A), 
+  v = hd s' -> 
   consistent_with true ps s' -> consistent_with false os s' ->
   EqSt s s'.
 Proof.
@@ -263,10 +347,14 @@ Qed.
 Lemma play_for_strategies_unique_strong : 
   forall (ps os : list A -> A -> A),
   forall (v : A),
-  exists (s : Stream A), v = hd s -> 
-  consistent_with true ps s -> consistent_with false os s ->
-  forall (s' : Stream A), v = hd s' ->
-  consistent_with true ps s' -> consistent_with false os s' ->
+  exists (s : Stream A), 
+  v = hd s -> 
+  consistent_with true ps s -> 
+  consistent_with false os s ->
+  forall (s' : Stream A), 
+  v = hd s' ->
+  consistent_with true ps s' -> 
+  consistent_with false os s' ->
   EqSt s s'.
 Proof.
 intros ps os v.
@@ -300,14 +388,15 @@ both in Win, because   is winning, and not in Win, because   is winning.
 *)
 
 (* We use concatenation here, because we need a decider for set_union and because the winning regions of both players have to be disjoint *)
-Definition determined : Prop := forall (ps os : set A), winningRegion true ps -> winningRegion false os -> Permutation (positions arena) (ps ++ os).
+Definition determined : Prop := forall (ps os : set A), 
+  winningRegion true ps -> 
+  winningRegion false os -> 
+  Permutation (positions arena) (ps ++ os).
 
 End games.
 
 Section reachability_games.
-Context {A : Type} (carrier_dec : forall x y : A, {x = y} + {x <> y}) (arena : Arena A) (reach' : set A) (reach'_pos : incl reach' (positions arena)).
-
-Definition reach : set A := nodup carrier_dec reach'.
+Context {A : Type} (carrier_dec : forall x y : A, {x = y} + {x <> y}) (arena : Arena A) (reach : set A) (reach_pos : incl reach (positions arena)).
 
 Inductive winCon : Stream A -> Prop := 
   | reach_hd : forall (s : Stream A), set_In (hd s) reach -> winCon s
@@ -319,7 +408,8 @@ Definition carrier_eqb (x y : A) : bool :=
       | right _ => false
     end.
 
-Lemma carrier_eqb_refl : forall (x : A), carrier_eqb x x = true.
+Lemma carrier_eqb_refl : forall (x : A), 
+  carrier_eqb x x = true.
 Proof.
 intros x.
 unfold carrier_eqb. now destruct (carrier_dec x x).
@@ -377,7 +467,10 @@ Qed.
 
 
 
-Lemma cpre_elim (a : A) (l : set A): incl (cpre (a :: l)) (set_union carrier_dec (set_map carrier_dec fst (filter (fun x => carrier_eqb a (snd x)) (edges arena))) (cpre l)).
+Lemma cpre_elim (a : A) (l : set A): 
+  incl 
+  (cpre (a :: l)) 
+  (set_union carrier_dec (set_map carrier_dec fst (filter (fun x => carrier_eqb a (snd x)) (edges arena))) (cpre l)).
 Proof.
 intros x H.
 destruct (Bool.eqb (player_positions arena x) player) eqn: Hb;
@@ -516,7 +609,9 @@ now apply filter_In.
 Qed.
 
 
-Lemma cpre_nodup (s : set A) : NoDup s -> NoDup (cpre s).
+Lemma cpre_nodup (s : set A) : 
+  NoDup s ->
+  NoDup (cpre s).
 Proof.
 intros H.
 induction s.
@@ -542,7 +637,9 @@ apply set_union_nodup.
 repeat (apply NoDup_filter). apply pos_is_set.
 Qed.
 
-Lemma cpre_monotonicity (l1 l2 : set A) : incl l1 l2 -> incl (cpre l1) (cpre l2).
+Lemma cpre_monotonicity (l1 l2 : set A) : 
+  incl l1 l2 -> 
+  incl (cpre l1) (cpre l2).
 Proof.
 revert l1. destruct l2; destruct l1.
 - intros H. now rewrite !cpre_nil.
@@ -611,15 +708,22 @@ Fixpoint attractor (n : nat) (r : set A) : set A :=
       | S m => let attr := attractor m r in set_union carrier_dec attr (cpre attr)
     end.
 
-Lemma attractor_elim (n : nat) (r : set A) : attractor (S n) r = set_union carrier_dec (attractor n r) (cpre (attractor n r)).
+Lemma attractor_monotonicity_index : forall i j : nat, 
+  i <= j -> 
+  incl (attractor i reach) (attractor j reach).
 Proof.
-easy.
-Qed.
-
-Lemma attractor_monotonicity_index (n : nat) (r : set A) : incl (attractor n r) (attractor (S n) r).
-Proof.
-intros a H.
-apply set_union_intro; auto.
+induction i.
+- intros j H x Hx. induction j; [easy | apply set_union_intro1; apply IHj; lia].
+- intros j H x Hx. destruct j.
+{
+    now exfalso.
+}
+apply set_union_elim in Hx as [Hx | Hx].
+{
+    apply IHi; [lia | easy].
+}
+apply set_union_intro2. revert x Hx.
+apply cpre_monotonicity. apply IHi. lia.
 Qed.
 
 Lemma attractor_monotonicity (n : nat) (r : set A) : incl r (attractor n r).
@@ -632,7 +736,9 @@ induction n.
 apply set_union_intro; auto.
 Qed.
 
-Lemma attractor_ran (n : nat) (l : set A) : incl l (positions arena) -> incl (attractor n l) (positions arena).
+Lemma attractor_ran (n : nat) (l : set A) : 
+  incl l (positions arena) -> 
+  incl (attractor n l) (positions arena).
 Proof.
 intros H x H_x.
 induction n.
@@ -655,7 +761,8 @@ Fixpoint attractor' (n : nat) (r : set A) : set A :=
     | S m => attractor' m (set_union carrier_dec r (cpre r))
     end.
 
-Lemma attractor_attractor' : forall n l, (attractor n l) = (attractor' n l).
+Lemma attractor_attractor' : forall n l, 
+  (attractor n l) = (attractor' n l).
 Proof.
   intros n. induction n as [|n IH].
   - easy.
@@ -665,7 +772,9 @@ Proof.
         + intros l. apply IH.
 Qed.
 
-Lemma attractor'_monotonicity (n : nat) : forall (l1 l2 : set A), incl l1 l2 -> incl (attractor' n l1) (attractor' n l2).
+Lemma attractor'_monotonicity (n : nat) : forall (l1 l2 : set A), 
+  incl l1 l2 -> 
+  incl (attractor' n l1) (attractor' n l2).
 Proof.
 induction n as [|n IH].
 - easy.
@@ -677,7 +786,9 @@ apply set_union_elim in H_x. destruct H_x.
 apply cpre_monotonicity with (l2 := l2) in H0; auto. now apply set_union_intro2.
 Qed.
 
-Lemma attractor_nodup (n : nat) (r : set A) : NoDup r -> NoDup (attractor n r).
+Lemma attractor_nodup (n : nat) (r : set A) : 
+  NoDup r -> 
+  NoDup (attractor n r).
 Proof.
 revert r. induction n; intros r H.
 {
@@ -690,7 +801,11 @@ apply set_union_nodup.
 apply cpre_nodup. now apply IHn.
 Qed.
 
-Lemma attractor_terminates : forall (r : set A), NoDup r -> incl r (positions arena) -> exists (n : nat), (n <= (length (positions arena))) /\ Permutation (attractor n r) (attractor (S n) r).
+Lemma attractor_terminates : forall (r : set A), 
+  NoDup r -> 
+  incl r (positions arena) -> 
+  exists (n : nat), 
+  (n <= (length (positions arena))) /\ Permutation (attractor n r) (attractor (S n) r).
 Proof.
 intros r H_nodup H_r.
 exists (length (positions arena)).
@@ -713,8 +828,8 @@ now apply cpre_nodup.
 }
 now apply attractor_nodup.
 - intros x. split; intros H.
-+ destruct (length (positions arena)); now eapply attractor_monotonicity_index.
-+  rewrite attractor_attractor' in *.  revert r H_nodup H_r x H. 
++ destruct (length (positions arena)); now apply set_union_intro1.
++ rewrite attractor_attractor' in *.  revert r H_nodup H_r x H. 
 enough (forall (t r : set A), incl (positions arena) (set_union carrier_dec t r) -> NoDup r -> incl r (positions arena) -> incl (attractor' (S (length t)) r) (attractor' (length t) r)) as Hi. 
 {
     intros r. apply Hi. intros a Ha. now apply set_union_intro1.
@@ -769,9 +884,28 @@ apply H_t in H_x.
 apply set_union_elim in H_x as [|]; [now exfalso | easy].
 Qed.
 
-Check List.hd.
-Definition sigma (w : list A) (v : A) : A :=
-    let attr := attractor (length (positions arena)) reach in
+Fixpoint find_smaller_attractor (v : A) (n : nat) : nat :=
+    match In_dec carrier_dec v (attractor n reach) with
+    | left _ => match n with
+                |  O => O
+                |  S m => find_smaller_attractor v m
+                end
+    |  right _ => n
+    end.
+
+Lemma find_smaller_lower_bound (v : A) (n : nat) : find_smaller_attractor v n <= n.
+Proof.
+induction n.
+- simpl. now destruct In_dec.
+- simpl. destruct In_dec.
+{
+    now apply Nat.le_le_succ_r.
+}
+easy.
+Qed.
+
+Definition sigma (_ : list A) (v : A) : A :=
+    let attr := attractor ((find_smaller_attractor v (length (positions arena)))) reach in
     if (Bool.eqb ((player_positions arena) v) player)
     then let succs := set_map carrier_dec snd (filter (fun p => carrier_eqb (fst p) v) (edges arena)) in 
       match (set_inter carrier_dec succs attr) with
@@ -779,6 +913,7 @@ Definition sigma (w : list A) (v : A) : A :=
       | (v' :: vs) => v'
       end
     else v.
+
 
 Lemma sigma_memoryless : memoryless sigma.
 Proof.
@@ -799,7 +934,7 @@ destruct (set_map carrier_dec snd (filter (fun p : A * A => carrier_eqb (fst p) 
 {
     now exfalso.
 }
-destruct (set_inter carrier_dec (a :: s) (attractor (length (positions arena)) reach)) eqn: Hi.
+destruct (set_inter carrier_dec (a :: s) (attractor (find_smaller_attractor v (length (positions arena))) reach)) eqn: Hi.
 {
     assert (In a (set_map carrier_dec snd (filter (fun p : A * A => carrier_eqb (fst p) v) (edges arena)))).
     {
@@ -812,7 +947,7 @@ destruct (set_inter carrier_dec (a :: s) (attractor (length (positions arena)) r
     }
     now exfalso.
 }
-assert (In a0 (set_inter carrier_dec (a :: s) (attractor (length (positions arena)) reach))).
+assert (In a0 (set_inter carrier_dec (a :: s) (attractor (find_smaller_attractor v (length (positions arena))) reach))).
 {
     rewrite Hi. simpl. now left.
 }
@@ -826,49 +961,415 @@ rewrite <- E2. unfold carrier_eqb in E1. destruct (carrier_dec (fst p) v).
 now exfalso.
 Qed.
 
-Lemma attractor_winning_region : winningRegion arena winCon player (attractor (length (positions arena)) reach).
+Lemma added_to_attractor (p : A) (n : nat) : 
+  not (In p reach) -> 
+  In p (attractor n reach) -> 
+  exists i, 
+  (not (In p (attractor i reach))) /\ In p (attractor (S i) reach).
+Proof.
+apply (find (fun n => attractor n reach) (fun x y => In x y) attractor_monotonicity_index (In_dec carrier_dec)).
+Qed.
+
+Lemma attr_find_smaller (p : A) (n : nat) : 
+  In p (attractor (S n) reach) <-> 
+  find_smaller_attractor p (S n) = find_smaller_attractor p n.
+Proof.
+split.
+{
+    intros H.
+    destruct n; now apply ifdec_left.
+}
+destruct n; intros E.
+- simpl in E. destruct (In_dec carrier_dec p reach) as [H1 | H1].
+{
+    now apply set_union_intro1.
+}
+destruct (In_dec carrier_dec p (set_union carrier_dec reach (cpre reach))) as [H2 | H2].
+{
+    apply set_union_elim in H2 as [H2 | H2].
+    {
+        now exfalso.
+    }
+    now apply set_union_intro2.
+}
+exfalso. lia.
+- unfold find_smaller_attractor in E. destruct (In_dec carrier_dec p (attractor (S (S n)) reach)) as [H1 | H1].
+{
+    easy.
+}
+exfalso. destruct (In_dec carrier_dec p (attractor (S n) reach)) as [H2 | H2].
+{
+    apply attractor_monotonicity_index with (j := S (S n)) in H2; [easy | lia].
+}
+lia.
+Qed.
+
+Lemma attr_find_smaller' (p : A) (n m k : nat) : 
+  find_smaller_attractor p n = m -> 
+  n <= k -> 
+  find_smaller_attractor p k = m.
+Proof.
+Admitted.
+
+Lemma added_to_attractor' (p : A) (n : nat) : 
+  not (In p reach) -> 
+  In p (attractor n reach) -> 
+  (not (In p (attractor (find_smaller_attractor p n) reach))) /\ In p (attractor (S (find_smaller_attractor p n)) reach).
+Proof.
+induction n; intros Hr Hp.
+{
+    easy.
+}
+destruct (In_dec carrier_dec p (attractor n reach)) as [H | H].
+{
+    apply attr_find_smaller in Hp. rewrite Hp. now apply IHn.
+}
+enough ((find_smaller_attractor p (S n)) = n) as H1.
+{
+    now rewrite H1.
+}
+unfold find_smaller_attractor. destruct In_dec; [| easy].
+{
+    destruct n.
+    {
+        now destruct In_dec.
+    }
+    now destruct In_dec.
+}
+Qed.
+
+Lemma sigma_attractor_pred (v : A) (n : nat) : 
+  In v (positions arena) -> 
+  In v (attractor (S n) reach) -> 
+  not (In v (attractor n reach)) -> 
+  eqb (player_positions arena v) player = true -> 
+  In (sigma [] v) (attractor n reach). 
+Proof.
+intros Hv Hs H Hb.
+unfold attractor in Hs.
+fold (attractor n reach) in Hs.
+apply set_union_elim in Hs as [Hs | Hs].
+{
+    now exfalso.
+}
+destruct (attractor n reach) eqn: Ea.
+{
+    now exfalso.
+}
+apply set_union_elim in Hs as [Hs | Hs].
+{
+    rewrite <- Ea in *.
+    apply set_in_map_iff in Hs as [p [Hp1 Hp2]].
+    apply filter_In in Hp2 as [Hp2 _].
+    apply filter_In in Hp2 as [Hp Hp2].
+    apply set_mem_correct1 in Hp2.
+    assert (find_smaller_attractor v (length (positions arena)) = n) as El.
+    {
+        admit.
+    }
+    unfold sigma.
+    rewrite Hb, El.
+    apply (set_inter_iff carrier_dec _ (set_map carrier_dec snd (filter (fun p => carrier_eqb (fst p) v) (edges arena)))).
+    destruct (set_inter _ _ _) eqn:E.
+    {
+        exfalso.
+        assert (In (snd p) (set_inter carrier_dec (set_map carrier_dec snd (filter (fun p : A * A => carrier_eqb (fst p) v) (edges arena))) (attractor n reach))) as Hf.
+        {
+            apply set_inter_intro.
+            {
+                apply set_in_map_iff. exists p. split; auto.
+                apply filter_In. rewrite Hp1. now rewrite carrier_eqb_refl.
+                }
+                easy.
+        }
+        now rewrite E in Hf.
+    }
+    now left.
+}
+exfalso.
+apply filter_In in Hs as [Hs _].
+apply filter_In in Hs as [_ Hs].
+now rewrite Hb in Hs.
+Admitted.
+
+Lemma attractor_winning_region (pos : set A) : 
+  winningRegion arena winCon player pos <-> 
+  (incl pos (attractor (length (positions arena)) reach) /\ incl (attractor (length (positions arena)) reach) pos).
+Proof.
+split.
+{
+    intros Hw.
+    unfold winningRegion in Hw.
+    admit.
+}
+intros [H1 H2] v Hv [f Hf].
+unfold winningFrom in Hf.
+apply H2.
+
+
+Lemma attractor_winning_region' : winningRegion' arena winCon player (attractor (length (positions arena)) reach).
 Proof.
 unfold winningRegion.
 intros v Hv.
 exists sigma.
-intros s Hs Hcs E.
-apply play_play'_ext_eq in Hs.
-unfold play' in Hs.
-unfold consistent_with in Hcs.
-unfold sigma in Hcs.
-destruct (Bool.eqb (player_positions arena v) player) eqn: Hb.
+destruct (In_dec carrier_dec v reach) as [Hr | Hr].
 {
-    specialize (Hcs 0). 
-    destruct s. cbn in Hcs. simpl in E. rewrite <- E in Hcs.
-    rewrite Hb in Hcs. 
-    assert (player_positions arena v = player).
+    intros s Hp Hc Ev.
+    apply reach_hd. now rewrite <- Ev.
+}
+apply (added_to_attractor' v (length (positions arena)) Hr) in Hv as [Hnm Hm]. 
+assert (exists m, m = find_smaller_attractor v (length (positions arena))) as [m Em].
+{
+    now eexists.
+}
+revert v Hr Em Hnm Hm.
+induction m.
+{
+    intros v Hv Em Hnm Hm s Hp Hc Ev.
+    rewrite <- Em in *.
+    destruct s. apply reach_tl. apply reach_hd.
+    apply play_play'_ext_eq in Hp. 
+    specialize (Hp 0). rewrite Str_nth_S_tl in Hp. rewrite !Str_nth_0_hd in Hp. simpl in Hp. 
+    specialize (Hc 0). rewrite Str_nth_S_tl in Hc. rewrite !Str_nth_0_hd in Hc. simpl in Hc.
+    simpl in Ev. rewrite <- Ev in *.
+    destruct (Bool.eqb (player_positions arena v) player) eqn: Hb.
     {
-        now apply Bool.eqb_prop.
+        rewrite <- Hc in *; try now apply Bool.eqb_prop in Hb.
+        enough (In (sigma [] v) (attractor 0 reach)).
+        {
+            easy.
+        }
+        apply sigma_attractor_pred; auto.
+        now apply edges_between_positions in Hp.
     }
-    specialize (Hcs H).
-    destruct ((set_map carrier_dec snd (filter (fun p : A * A => carrier_eqb (fst p) v) (edges arena)))) eqn: H1.
+    apply set_union_elim in Hm as [H1 | H1].
+    {
+        now exfalso.
+    }
+    destruct reach eqn: Hr.
+    {
+        exfalso. now rewrite cpre_nil in H1.
+    }
+    apply set_union_elim in H1 as [H1 | H1].
     {
         exfalso.
-        (* v muss position sein -> exfalso mit out_edges*)
-        admit.
+        apply set_in_map_iff in H1 as [p [H1 H2]].
+        apply filter_In in H2 as [_ H2]. rewrite H1 in H2.
+        apply set_mem_correct1 in H2. apply filter_In in H2 as [_ H2]. congruence.
     }
-    simpl in Hcs.
-    (* set_mem induction???*)
-    destruct (set_mem carrier_dec a0 (attractor (length (positions arena)) reach)).
+    rewrite <- Hr in *.
+    apply filter_In in H1 as [_ H1].
+    apply forallb_forall with (x := (v, hd s)) in H1.
     {
-        (* successor im attractor -> es existiert ein endlich Prefix, sodass reach erreicht wird
-        --> Hilfslemma? *)
+        apply set_mem_correct1 in H1.
+        apply filter_In in H1 as [_ H1].
+        now apply set_mem_correct1 in H1.
+    }
+    apply filter_In. simpl. now rewrite carrier_eqb_refl.
+}
+intros v Hv Em Hnm Hm.
+intros s. destruct s. intros Hp Hc Ev.
+simpl in Ev. rewrite <- Ev in *. clear Ev. rewrite <- Em in *.
+apply reach_tl.
+apply (IHm (hd s)).
+{
+    (* aus Hnm und Hm sollte man schließen können, 
+    dass mindestens zwei Schritte in Reach benötigt werden. 
+    Da (hd s) einem Schritt entspricht, kann es nicht in Reach sein. *)
+    apply play_play'_ext_eq in Hp. 
+    specialize (Hp 0). rewrite Str_nth_S_tl in Hp. rewrite !Str_nth_0_hd in Hp. simpl in Hp. 
+    specialize (Hc 0). rewrite Str_nth_S_tl in Hc. rewrite !Str_nth_0_hd in Hc. simpl in Hc.
+    destruct (Bool.eqb (player_positions arena v) player) eqn: Hb.
+    {
+        rewrite <- Hc in *; try now apply Bool.eqb_prop in Hb.
         admit.
     }
     admit.
 }
-clear Hcs.
-(*
-Da v im attractor ist, sind die möglichen Nachfolger von v
-durch den attractor beschränkt.
-Induktion -> und dann wahrscheinlich das obige Hilfslemma.
-*)
-admit.
+{
+    (* sollte aus der Attractor-Definition folgen ?! *)
+    admit.
+}
+{
+    (* sollte ebenfalls aus Hnm und Hm folgen *)
+    admit.
+}
+{
+    (* Hm := In (hd (Cons v s)) attractor (S (S m)) => In (hd s) attractor (S m)
+    Die Anzahl an benötigten Schritten muss also mit jedem tl Aufruf kleiner werden... gut!*)
+    admit.
+}
+{
+    apply play_play'_ext_eq. apply play_play'_ext_eq in Hp. 
+    intros x.
+    now specialize (Hp (S x)). 
+}
+{
+    unfold consistent_with in Hc.
+    intros x. now specialize (Hc (S x)).
+}
+easy.
+Admitted.
+
+
+Lemma attractor_winning_region'' : winningRegion' arena winCon player (attractor (length (positions arena)) reach).
+Proof.
+unfold winningRegion.
+intros v Hv.
+exists sigma.
+destruct (In_dec carrier_dec v reach) as [Hr | Hr].
+{
+    intros s Hp Hc Ev.
+    apply reach_hd. now rewrite <- Ev.
+}
+apply (added_to_attractor' v (length (positions arena)) Hr) in Hv as [Hnm Hm]. 
+assert (exists m, m = find_smaller_attractor v (length (positions arena))) as [m Em].
+{
+    now eexists.
+}
+revert v Hr Em Hnm Hm.
+induction m.
+{
+    intros v Hv Em _ H1 s Hp Hc Ev.
+    rewrite <- Em in *.
+    destruct s. apply reach_tl. apply reach_hd.
+    apply set_union_elim in H1 as [H1 | H1].
+    {
+        now exfalso.
+    }
+    destruct reach eqn: Hr.
+    {
+        exfalso. now rewrite cpre_nil in H1.
+    }
+    destruct (Bool.eqb (player_positions arena v) player) eqn: Hb; apply set_union_elim in H1 as [H1 | H1].
+    {
+        rewrite <- Hr in *.
+        apply play_play'_ext_eq in Hp. 
+        specialize (Hp 0). rewrite Str_nth_S_tl in Hp. rewrite !Str_nth_0_hd in Hp. simpl in Hp. 
+        specialize (Hc 0). rewrite Str_nth_S_tl in Hc. rewrite !Str_nth_0_hd in Hc. simpl in Hc.
+        simpl in Ev. rewrite <- Ev in *.
+        rewrite <- Hc in *; try now apply Bool.eqb_prop in Hb.
+        unfold sigma. rewrite Hb.
+        rewrite <- Em.
+        destruct set_inter eqn: Ei.
+        {
+            exfalso. 
+            apply set_in_map_iff in H1 as [p [H1 H2]].
+            apply filter_In in H2 as [H2 _].
+            apply filter_In in H2 as [H2 H3].
+            assert (In (snd p) (set_inter carrier_dec (set_map carrier_dec snd (filter (fun p : A * A => carrier_eqb (fst p) v) (edges arena))) (attractor 0 reach))).
+            {
+                apply set_inter_intro.
+                {
+                    apply set_in_map_iff. exists p. split; try easy.
+                    apply filter_In. rewrite H1. split; try easy. apply carrier_eqb_refl.
+                }
+                now apply set_mem_correct1 in H3.
+            }
+            now rewrite Ei in H.
+        }
+        assert (In a1 (set_inter carrier_dec (set_map carrier_dec snd (filter (fun p : A * A => carrier_eqb (fst p) v) (edges arena))) (attractor 0 reach))).
+        {
+            rewrite Ei. now left.
+        }
+        now apply set_inter_elim in H as [H2 H3].
+    }
+    {
+        exfalso.
+        apply filter_In in H1 as [H1 _]. apply filter_In in H1 as [_ H1]. now rewrite Hb in H1.
+    }
+    {
+        exfalso.
+        apply set_in_map_iff in H1 as [p [H1 H2]].
+        apply filter_In in H2 as [_ H2]. rewrite H1 in H2.
+        apply set_mem_correct1 in H2. apply filter_In in H2 as [_ H2]. congruence.
+    }
+    rewrite <- Hr in *.
+    apply filter_In in H1 as [_ H1].
+    apply play_play'_ext_eq in Hp. 
+        specialize (Hp 0). rewrite Str_nth_S_tl in Hp. rewrite !Str_nth_0_hd in Hp. simpl in Hp. 
+        specialize (Hc 0). rewrite Str_nth_S_tl in Hc. rewrite !Str_nth_0_hd in Hc. simpl in Hc.
+        simpl in Ev. rewrite <- Ev in *.
+        apply forallb_forall with (x := (v, hd s)) in H1.
+        {
+            apply set_mem_correct1 in H1.
+            apply filter_In in H1 as [_ H1].
+            now apply set_mem_correct1 in H1.
+        }
+        apply filter_In. simpl. now rewrite carrier_eqb_refl.
+}
+intros v Hv Em Hnm Hm.
+intros s. destruct s. intros Hp Hc Ev.
+simpl in Ev. rewrite <- Ev in *. clear Ev. rewrite <- Em in *.
+apply reach_tl.
+apply (IHm (hd s)).
+{
+    (* aus Hnm und Hm sollte man schließen können, 
+    dass mindestens zwei Schritte in Reach benötigt werden. 
+    Da (hd s) einem Schritt entspricht, kann es nicht in Reach sein. *)
+    unfold attractor in Hm. fold (attractor (S m) reach) in Hm.
+    apply set_union_elim in Hm as [H1 | H1]; try now exfalso.
+    destruct (attractor (S m) reach) eqn: Ea.
+    {
+        now exfalso.
+    }
+    destruct (Bool.eqb (player_positions arena v) player) eqn: Hb; apply set_union_elim in H1 as [H1 | H1].
+    {
+        apply play_play'_ext_eq in Hp. 
+        specialize (Hp 0). rewrite Str_nth_S_tl in Hp. rewrite !Str_nth_0_hd in Hp. simpl in Hp. 
+        specialize (Hc 0). rewrite Str_nth_S_tl in Hc. rewrite !Str_nth_0_hd in Hc. simpl in Hc.
+        rewrite <- Hc in *; try now apply Bool.eqb_prop in Hb.
+        unfold sigma. rewrite Hb.
+        rewrite <- Em.
+        destruct set_inter eqn: Ei.
+        {
+            apply set_in_map_iff in H1 as [p [H1 H2]].
+            apply filter_In in H2 as [H2 _].
+            apply filter_In in H2 as [H2 H3].
+            assert (In (snd p) (set_inter carrier_dec (set_map carrier_dec snd (filter (fun p : A * A => carrier_eqb (fst p) v) (edges arena))) (attractor (S m) reach))).
+            {
+                apply set_inter_intro.
+                {
+                    apply set_in_map_iff. exists p. split; try easy.
+                    apply filter_In. rewrite H1. split; try easy. apply carrier_eqb_refl.
+                }
+                rewrite <- Ea in H3.
+                now apply set_mem_correct1 in H3.
+            }
+            now rewrite Ei in H.
+        }
+        assert (In a1 (set_inter carrier_dec (set_map carrier_dec snd (filter (fun p : A * A => carrier_eqb (fst p) v) (edges arena))) (attractor (S m) reach))).
+        {
+            rewrite Ei. now left.
+        }
+        apply set_inter_elim in H as [H2 H3].
+        admit.
+    }
+    admit.
+}
+{
+    (* sollte aus der Attractor-Definition folgen ?! *)
+    admit.
+}
+{
+    (* sollte ebenfalls aus Hnm und Hm folgen *)
+    admit.
+}
+{
+    (* Hm := In (hd (Cons v s)) attractor (S (S m)) => In (hd s) attractor (S m)
+    Die Anzahl an benötigten Schritten muss also mit jedem tl Aufruf kleiner werden... gut!*)
+    admit.
+}
+{
+    apply play_play'_ext_eq. apply play_play'_ext_eq in Hp. 
+    intros x.
+    now specialize (Hp (S x)). 
+}
+{
+    unfold consistent_with in Hc.
+    intros x. now specialize (Hc (S x)).
+}
+easy.
 Admitted.
 
 End fix_player.
@@ -931,6 +1432,143 @@ Proof.
 decide equality.
 Defined.
 
+Definition test_strategy (_ : list nat) (n : nat) : nat :=
+    match n with
+      | 1 => 2
+      | 3 => 4
+      | 7 => 8
+      | 8 => 5
+      | _ => 10
+    end.
+
+Check is_strategy.
+
+Lemma test_is_memoryless_strat : is_strategy test_arena true test_strategy /\ memoryless test_strategy.
+Proof.
+split.
+{
+intros l Hl v Hv Hb.
+simpl in Hv.
+repeat (destruct Hv as [Hv | Hv]); try rewrite <- Hv in *; try easy; firstorder.
+}
+easy.
+Qed.
+
+Lemma win_from_4 : winningFrom test_arena (winCon [4; 5]) true test_strategy 4.
+Proof.
+intros s Hp Hs Ev.
+apply reach_hd. rewrite <- Ev. simpl. tauto.
+Qed.
+
+Lemma win_from_5 : winningFrom test_arena (winCon [4; 5]) true test_strategy 5.
+Proof.
+intros s Hp Hs Ev.
+apply reach_hd. rewrite <- Ev. simpl. tauto.
+Qed.
+
+Lemma win_from_3 : winningFrom test_arena (winCon [4; 5]) true test_strategy 3.
+Proof.
+intros s Hp Hs Ev.
+destruct s as [s0 s]. destruct s as [s1 s]. 
+simpl in Ev. rewrite <- Ev in *.
+apply reach_tl. 
+assert (H := Hs). specialize (Hs 0). 
+rewrite !Str_nth_S_tl in Hs.
+rewrite !Str_nth_0_hd in Hs. simpl in Hs.                    
+rewrite <- Hs in *; auto.
+apply win_from_4; auto.
+{
+    now apply play_elim in Hp as [_ Hp].
+}
+intros n.
+specialize (H (S n)).
+now rewrite !Str_nth_S_tl in H.
+Qed.
+
+Lemma win_from_8 : winningFrom test_arena (winCon [4; 5]) true test_strategy 8.
+Proof.
+intros s Hp Hs Ev.
+destruct s as [s0 s]. destruct s as [s1 s]. 
+simpl in Ev. rewrite <- Ev in *.
+apply reach_tl. 
+assert (H := Hs). specialize (Hs 0). 
+rewrite !Str_nth_S_tl in Hs.
+rewrite !Str_nth_0_hd in Hs. simpl in Hs.                    
+rewrite <- Hs in *; auto.
+apply win_from_5; auto.
+{
+    now apply play_elim in Hp as [_ Hp].
+}
+intros n.
+specialize (H (S n)).
+now rewrite !Str_nth_S_tl in H.
+Qed.
+
+Lemma win_from_7 : winningFrom test_arena (winCon [4; 5]) true test_strategy 7.
+Proof.
+intros s Hp Hs Ev.
+destruct s as [s0 s]. destruct s as [s1 s]. 
+simpl in Ev. rewrite <- Ev in *.
+apply reach_tl. 
+assert (H := Hs). specialize (Hs 0). 
+rewrite !Str_nth_S_tl in Hs.
+rewrite !Str_nth_0_hd in Hs. simpl in Hs.                    
+rewrite <- Hs in *; auto.
+apply win_from_8; auto.
+{
+    now apply play_elim in Hp as [_ Hp].
+}
+intros n.
+specialize (H (S n)).
+now rewrite !Str_nth_S_tl in H.
+Qed.
+
+Lemma win_from_6 : winningFrom test_arena (winCon [4; 5]) true test_strategy 6.
+Proof.
+intros s Hp Hs Ev.
+destruct s as [s0 s]. destruct s as [s1 s].
+simpl in Ev. rewrite <- Ev in *.
+apply reach_tl. 
+assert (H := Hp).
+apply play_play'_ext_eq in Hp.
+specialize (Hp 0). rewrite !Str_nth_S_tl in Hp.
+rewrite !Str_nth_0_hd in Hp. simpl in Hp.
+repeat (destruct Hp as [Hp | Hp]); try easy.
+apply pair_equal_spec in Hp as [Hp1 Hp2].
+rewrite <- Hp2 in *.
+apply win_from_7; auto.
+{
+    now apply play_elim in H as [_ H].
+}
+intros n.
+specialize (Hs (S n)).
+now rewrite !Str_nth_S_tl in Hs.
+Qed.
+
+Lemma test_strategy_uniform_winning : forall v : nat, 
+  set_In v (attractor nat_dec test_arena true (length (test_positions)) [4;5]) -> 
+  winningFrom test_arena (winCon [4; 5]) true test_strategy v.
+Proof.
+intros v Hv s Hp Hs Ev.
+cbv in Hv.
+destruct s as [s0 s]. simpl in Ev.
+repeat destruct Hv as [Hv | Hv]; try rewrite <- Hv in *; rewrite <- Ev in *; try easy.
+Admitted.
+
+
+
+
+
+
+
+
+
+
+
+
 Compute cpre nat_dec test_arena true [4;5].
 
-Compute attractor nat_dec test_arena true 3 [4;5].
+Compute attractor nat_dec test_arena true 2 [4;5].
+Check attractor.
+
+Compute find_smaller_attractor nat_dec test_arena [4;5] true 6 5.
